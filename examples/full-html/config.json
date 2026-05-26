@@ -1,0 +1,46 @@
+{
+  "locale": "en-US",
+  "timeoutSeconds": 0,
+  "showStderrIfSuccess": true,
+  "templatesDir": "examples/full-html/templates",
+  "stdout": {
+    "format": "html"
+  },
+  "stderr": {
+    "format": "html"
+  },
+  "transports": {
+    "smtp": {
+      "enabled": true,
+      "host": "smtp.example.com",
+      "port": 587,
+      "from": "run-and-notify@example.com",
+      "to": ["ops@example.com"]
+    },
+    "slack": {
+      "enabled": true,
+      "tokenEnvVar": "SLACK_BOT_TOKEN",
+      "defaultChannel": "#critical-ops"
+    }
+  },
+  "success": {
+    "email": {
+      "subject": "subject.hbs",
+      "html": "email.html.hbs",
+      "text": "text.hbs"
+    },
+    "slack": {
+      "blocks": "slack.blocks.json.hbs"
+    }
+  },
+  "error": {
+    "email": {
+      "subject": "subject.hbs",
+      "html": "email.html.hbs",
+      "text": "text.hbs"
+    },
+    "slack": {
+      "blocks": "slack.blocks.json.hbs"
+    }
+  }
+}

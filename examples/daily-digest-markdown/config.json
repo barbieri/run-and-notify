@@ -1,0 +1,46 @@
+{
+  "locale": "en-US",
+  "timeoutSeconds": 0,
+  "showStderrIfSuccess": false,
+  "templatesDir": "examples/daily-digest-markdown/templates",
+  "stdout": {
+    "format": "markdown"
+  },
+  "stderr": {
+    "format": "jsonl"
+  },
+  "transports": {
+    "smtp": {
+      "enabled": true,
+      "host": "smtp.example.com",
+      "port": 587,
+      "from": "run-and-notify@example.com",
+      "to": ["digest@example.com"]
+    },
+    "slack": {
+      "enabled": true,
+      "tokenEnvVar": "SLACK_BOT_TOKEN",
+      "defaultChannel": "#daily-digest"
+    }
+  },
+  "success": {
+    "email": {
+      "subject": "success.subject.hbs",
+      "html": "success.email.html.hbs",
+      "text": "success.text.hbs"
+    },
+    "slack": {
+      "blocks": "success.slack.blocks.json.hbs"
+    }
+  },
+  "error": {
+    "email": {
+      "subject": "error.subject.hbs",
+      "html": "error.email.html.hbs",
+      "text": "error.text.hbs"
+    },
+    "slack": {
+      "blocks": "error.slack.blocks.json.hbs"
+    }
+  }
+}

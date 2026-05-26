@@ -1,0 +1,16 @@
+<h1>{{stdout.lines.[0].title}}</h1>
+<ul>
+{{#each stdout.lines.[0].items}}
+  <li>{{this}}</li>
+{{/each}}
+</ul>
+<table>
+{{#each stdout.lines.[0].table}}
+  <tr><td>{{this.[0]}}</td><td>{{this.[1]}}</td></tr>
+{{/each}}
+</table>
+<p>Date: {{dateFromISO8601 stdout.lines.[0].date}}</p>
+<p>Time: {{timeFromISO8601 stdout.lines.[0].time}}</p>
+<p>Date/time: {{datetimeFromISO8601 stdout.lines.[0].datetime}}</p>
+{{{markdownToHtml stdout.lines.[0].childMarkdown}}}
+<pre>{{{rawToHtml stdout.lines.[0].childRaw}}}</pre>

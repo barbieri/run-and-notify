@@ -1,0 +1,54 @@
+{
+  "name": "run-and-notify",
+  "locale": "en-US",
+  "dryRun": false,
+  "propagateExitCode": true,
+  "timeoutSeconds": 0,
+  "showStderrIfSuccess": false,
+  "hideCommandIfSuccess": false,
+  "stdout": {
+    "format": "raw"
+  },
+  "stderr": {
+    "format": "raw"
+  },
+  "transports": {
+    "smtp": {
+      "enabled": true,
+      "host": "smtp.example.com",
+      "port": 587,
+      "secure": false,
+      "from": "run-and-notify@example.com",
+      "to": ["ops@example.com"],
+      "auth": {
+        "user": "run-and-notify@example.com",
+        "passEnvVar": "SMTP_PASS"
+      }
+    },
+    "slack": {
+      "enabled": true,
+      "tokenEnvVar": "SLACK_BOT_TOKEN",
+      "defaultChannel": "#ops"
+    }
+  },
+  "success": {
+    "email": {
+      "subject": "success.subject.hbs",
+      "html": "default.email.html.hbs",
+      "text": "default.text.hbs"
+    },
+    "slack": {
+      "blocks": "default.slack.blocks.json.hbs"
+    }
+  },
+  "error": {
+    "email": {
+      "subject": "error.subject.hbs",
+      "html": "default.email.html.hbs",
+      "text": "default.text.hbs"
+    },
+    "slack": {
+      "blocks": "default.slack.blocks.json.hbs"
+    }
+  }
+}

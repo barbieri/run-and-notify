@@ -1,0 +1,20 @@
+{
+  "transports": {
+    "smtp": {
+      "enabled": true,
+      "host": "smtp.example.com",
+      "port": 587,
+      "from": "run-and-notify@example.com",
+      "to": ["ops@example.com"],
+      "auth": {
+        "user": "run-and-notify@example.com",
+        "passEnvVar": "SMTP_PASS"
+      }
+    },
+    "slack": {
+      "enabled": true,
+      "tokenEnvVar": "SLACK_BOT_TOKEN",
+      "defaultChannel": "#ops"
+    }
+  }
+}

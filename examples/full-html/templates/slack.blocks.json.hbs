@@ -1,0 +1,9 @@
+[
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": {{{jsonString (concat "*HTML command result*" (nl) "*Command:* `" (shellCommand command) "`" (nl) "*Status:* " status (nl) "*Executed:* " (datetimeFromISO8601 executedAt) (nl) "*CWD:* `" (shellToken cwd) "`" (nl) (nl) "*Output*" (nl) (slackCodeBlock (htmlToMarkdown stdout.html)) (nl) (nl) "*Errors*" (nl) (slackCodeBlock (htmlToMarkdown stderr.html)))}}}
+    }
+  }
+]

@@ -1,0 +1,22 @@
+<main style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #18212f; line-height: 1.5;">
+  <section style="border: 1px solid #d9e2ec; border-radius: 16px; overflow: hidden;">
+    <header style="background: {{#if status}}#7f1d1d{{else}}#111827{{/if}}; color: #f9fafb; padding: 20px 24px;">
+      <p style="margin: 0 0 6px; text-transform: uppercase; letter-spacing: .08em; font-size: 12px;">Critical automation</p>
+      <h1 style="margin: 0; font-size: 22px;">Raw command result</h1>
+    </header>
+    <section style="padding: 18px 24px; background: #f8fafc;">
+      <p><strong>Executed:</strong> {{datetimeFromISO8601 executedAt}}</p>
+      <p><strong>Command:</strong> <code>{{shellCommand command}}</code></p>
+      <p><strong>CWD:</strong> <code>{{shellToken cwd}}</code></p>
+      <p><strong>Status:</strong> <code>{{status}}</code></p>
+    </section>
+    <section style="padding: 20px 24px;">
+      <h2>Output</h2>
+      <pre style="white-space: pre-wrap;">{{{rawToHtml stdout.raw}}}</pre>
+    </section>
+    <section style="padding: 20px 24px; border-top: 1px solid #e5e7eb;">
+      <h2>Errors</h2>
+      <pre style="white-space: pre-wrap;">{{{rawToHtml stderr.raw}}}</pre>
+    </section>
+  </section>
+</main>

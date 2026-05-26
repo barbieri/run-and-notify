@@ -1,0 +1,15 @@
+{{#unless (hideCommandIfSuccess)}}
+# Command {{#if status}}failed{{else}}succeeded{{/if}}
+
+- Status: `{{status}}`
+- Command: `{{shellCommand command}}`
+- CWD: `{{shellToken cwd}}`
+
+## Output
+{{/unless}}
+{{> output-text stdout}}
+{{#if (hasOutput stderr)}}
+
+## Errors
+{{> output-text stderr}}
+{{/if}}

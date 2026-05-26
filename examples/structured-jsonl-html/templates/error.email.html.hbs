@@ -1,0 +1,6 @@
+<h1>Structured report failed</h1>
+<ul>
+{{#each stderr.lines}}
+  <li>{{#if timestamp}}{{datetimeFromISO8601 timestamp}} {{{escapeHtml msg}}}{{else}}{{{escapeHtml raw}}}{{/if}}</li>
+{{/each}}
+</ul>

@@ -1,0 +1,9 @@
+<h1>Structured report failed</h1>
+<p><strong>CWD:</strong> {{shellToken cwd}}</p>
+<p><strong>Command:</strong> {{shellCommand command}}</p>
+<p><strong>Status:</strong> {{status}}</p>
+<ul>
+{{#each stderr.lines}}
+  <li>{{#if timestamp}}{{datetimeFromISO8601 timestamp}} {{{escapeHtml msg}}}{{else}}{{{escapeHtml raw}}}{{/if}}</li>
+{{/each}}
+</ul>

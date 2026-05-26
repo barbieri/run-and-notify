@@ -1,0 +1,259 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/barbieri/run-and-notify/schemas/config.schema.json",
+  "title": "run-and-notify configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the automation used in default notification titles and subjects. Defaults to the command with arguments",
+      "minLength": 1
+    },
+    "locale": {
+      "type": "string",
+      "description": "BCP 47 locale used by date and time template helpers.",
+      "default": "en-US",
+      "minLength": 1
+    },
+    "cwd": {
+      "type": "string",
+      "description": "Working directory used to execute the command. CLI override: --cwd=/path."
+    },
+    "dryRun": {
+      "type": "boolean",
+      "description": "Render and log notifications without sending through configured transports. It DOES EXECUTE the target command, just does not send the notifications!",
+      "default": false
+    },
+    "propagateExitCode": {
+      "type": "boolean",
+      "description": "When true, the run-and-notify process exits with the target command status after notifications are delivered.",
+      "default": true
+    },
+    "timeoutSeconds": {
+      "type": "integer",
+      "description": "Command timeout in seconds. A value of 0 disables the timeout.",
+      "default": 0,
+      "minimum": 0
+    },
+    "showStderrIfSuccess": {
+      "type": "boolean",
+      "description": "When false, success templates should not render stderr.",
+      "default": false
+    },
+    "hideCommandIfSuccess": {
+      "type": "boolean",
+      "description": "When true, success templates should render only command output content and omit command metadata, visible separators, and output headings.",
+      "default": false
+    },
+    "templatesDir": {
+      "type": "string",
+      "description": "Directory containing Handlebars templates and partials. When omitted, built-in templates are used.",
+      "minLength": 1
+    },
+    "stdout": {
+      "type": "object",
+      "description": "Parsing configuration for command stdout.",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "type": "string",
+          "description": "How stdout is exposed to templates.",
+          "default": "raw",
+          "enum": ["raw", "jsonl", "markdown", "html"]
+        }
+      },
+      "required": ["format"]
+    },
+    "stderr": {
+      "type": "object",
+      "description": "Parsing configuration for command stderr.",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "type": "string",
+          "description": "How stderr is exposed to templates.",
+          "default": "raw",
+          "enum": ["raw", "jsonl", "markdown", "html"]
+        }
+      },
+      "required": ["format"]
+    },
+    "transports": {
+      "type": "object",
+      "description": "Better-Notify transport configuration.",
+      "default": {},
+      "additionalProperties": false,
+      "properties": {
+        "smtp": {
+          "type": "object",
+          "description": "SMTP email transport configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable SMTP email notifications.",
+              "default": true
+            },
+            "host": {
+              "type": "string",
+              "description": "SMTP server host.",
+              "minLength": 1
+            },
+            "port": {
+              "type": "integer",
+              "description": "SMTP server port.",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "secure": {
+              "type": "boolean",
+              "description": "Use TLS from connection start instead of STARTTLS.",
+              "default": false
+            },
+            "from": {
+              "type": "string",
+              "description": "Email sender address.",
+              "minLength": 1
+            },
+            "to": {
+              "type": "array",
+              "description": "Email recipient addresses.",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            },
+            "auth": {
+              "type": "object",
+              "description": "SMTP authentication configuration.",
+              "additionalProperties": false,
+              "properties": {
+                "user": {
+                  "type": "string",
+                  "description": "SMTP username."
+                },
+                "passEnvVar": {
+                  "type": "string",
+                  "description": "Environment variable containing the SMTP password.",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "required": ["enabled", "host", "port", "from", "to"]
+        },
+        "slack": {
+          "type": "object",
+          "description": "Better-Notify Slack transport configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable Slack notifications.",
+              "default": true
+            },
+            "tokenEnvVar": {
+              "type": "string",
+              "description": "Environment variable containing the Slack bot token used by @betternotify/slack slackTransport().",
+              "minLength": 1
+            },
+            "defaultChannel": {
+              "type": "string",
+              "description": "Default Slack channel ID or name used when Slack templates do not set a destination."
+            }
+          },
+          "required": ["enabled", "tokenEnvVar"]
+        }
+      }
+    },
+    "success": {
+      "$ref": "#/definitions/notification",
+      "description": "Templates used when the command exits with status 0.",
+      "default": {
+        "email": {
+          "subject": "success.subject.hbs",
+          "html": "default.email.html.hbs",
+          "text": "default.text.hbs"
+        },
+        "slack": {
+          "blocks": "default.slack.blocks.json.hbs"
+        }
+      }
+    },
+    "error": {
+      "$ref": "#/definitions/notification",
+      "description": "Templates used when the command exits with a non-zero status.",
+      "default": {
+        "email": {
+          "subject": "error.subject.hbs",
+          "html": "default.email.html.hbs",
+          "text": "default.text.hbs"
+        },
+        "slack": {
+          "blocks": "default.slack.blocks.json.hbs"
+        }
+      }
+    }
+  },
+  "required": [
+    "locale",
+    "dryRun",
+    "propagateExitCode",
+    "timeoutSeconds",
+    "showStderrIfSuccess",
+    "hideCommandIfSuccess",
+    "stdout",
+    "stderr",
+    "transports",
+    "success",
+    "error"
+  ],
+  "definitions": {
+    "emailTemplates": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subject": {
+          "type": "string",
+          "description": "Handlebars template filename used for email subject."
+        },
+        "html": {
+          "type": "string",
+          "description": "Handlebars template filename used for email HTML."
+        },
+        "text": {
+          "type": "string",
+          "description": "Handlebars template filename used for plain text email."
+        }
+      }
+    },
+    "slackTemplates": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Optional Handlebars template filename used for Slack fallback text. When omitted, fallback text is generated from command and status."
+        },
+        "blocks": {
+          "type": "string",
+          "description": "Handlebars template filename that renders a JSON array of Slack blocks."
+        }
+      }
+    },
+    "notification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "email": {
+          "$ref": "#/definitions/emailTemplates"
+        },
+        "slack": {
+          "$ref": "#/definitions/slackTemplates"
+        }
+      }
+    }
+  }
+}

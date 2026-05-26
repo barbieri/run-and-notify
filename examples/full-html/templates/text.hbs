@@ -1,0 +1,12 @@
+# HTML Command Result
+
+- Executed: {{datetimeFromISO8601 executedAt}}
+- Command: `{{shellCommand command}}`
+- CWD: `{{shellToken cwd}}`
+- Status: `{{status}}`
+
+## Output
+{{htmlToMarkdown stdout.html}}
+
+## Errors
+{{htmlToMarkdown stderr.html}}

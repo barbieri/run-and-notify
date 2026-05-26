@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "skills": {
+    "better-notify": {
+      "source": "better-notify/better-notify",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "skills/better-notify/SKILL.md",
+      "computedHash": "d5879de6eaeabc5a4b1b38ea25445e231b7a068e830b8daec50c99e4ab78ebb8"
+    }
+  }
+}

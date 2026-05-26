@@ -1,0 +1,9 @@
+[
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": {{{jsonString (slackCodeBlock (concat stdout.lines.[0].title (nl) "- " stdout.lines.[0].items.[0] (nl) "- " stdout.lines.[0].items.[1] (nl) (datetimeFromISO8601 stdout.lines.[0].datetime)))}}}
+    }
+  }
+]

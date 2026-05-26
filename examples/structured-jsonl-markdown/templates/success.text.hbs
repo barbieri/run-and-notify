@@ -1,0 +1,19 @@
+# {{stdout.lines.[0].title}}
+
+{{#each stdout.lines.[0].items}}
+- {{this}}
+{{/each}}
+
+| Col 1 | Col 2 |
+| --- | --- |
+{{#each stdout.lines.[0].table}}
+| {{this.[0]}} | {{this.[1]}} |
+{{/each}}
+
+- Date: {{dateFromISO8601 stdout.lines.[0].date}}
+- Time: {{timeFromISO8601 stdout.lines.[0].time}}
+- Date/time: {{datetimeFromISO8601 stdout.lines.[0].datetime}}
+
+{{htmlToMarkdown stdout.lines.[0].childHtml}}
+
+{{escapeMarkdown stdout.lines.[0].childRaw}}

@@ -1,0 +1,16 @@
+[
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": {{{jsonString (concat "*Raw command result*" (nl) "*Command:* `" (shellCommand command) "`" (nl) "*Status:* " status (nl) "*Executed:* " (datetimeFromISO8601 executedAt) (nl) "*CWD:* `" (shellToken cwd) "`")}}}
+    }
+  },
+  {
+    "type": "section",
+    "text": {
+      "type": "mrkdwn",
+      "text": {{{jsonString (concat "*Output*" (nl) (slackCodeBlock stdout) (nl) (nl) "*Errors*" (nl) (slackCodeBlock stderr))}}}
+    }
+  }
+]

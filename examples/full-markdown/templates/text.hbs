@@ -1,0 +1,18 @@
+# Markdown Command Result
+
+- Executed: {{datetimeFromISO8601 executedAt}}
+- Command: `{{shellCommand command}}`
+- CWD: `{{shellToken cwd}}`
+- Status: `{{status}}`
+
+## Output
+
+```markdown
+{{stdout.markdown}}
+```
+
+## Errors
+
+```markdown
+{{stderr.markdown}}
+```

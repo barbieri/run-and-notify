@@ -1,0 +1,7 @@
+Daily digest failed
+CWD: {{shellToken cwd}}
+Command: {{shellCommand command}}
+Status: {{status}}
+{{#each stderr.lines}}
+{{#if timestamp}}{{datetimeFromISO8601 timestamp}} {{msg}}{{else}}{{raw}}{{/if}}
+{{/each}}

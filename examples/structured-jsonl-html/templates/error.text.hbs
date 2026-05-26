@@ -1,0 +1,4 @@
+Structured report failed
+{{#each stderr.lines}}
+{{#if timestamp}}{{datetimeFromISO8601 timestamp}} {{msg}}{{else}}{{raw}}{{/if}}
+{{/each}}
