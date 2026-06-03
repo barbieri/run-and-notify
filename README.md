@@ -54,7 +54,9 @@ Only `jsonl` exposes `lines`. `raw`, `markdown`, and `html` preserve the full st
 - `port`: SMTP port, from `1` to `65535`.
 - `secure`: use TLS from connection start.
 - `from`: sender email address.
-- `to`: one or more recipient email addresses.
+- `to`: one or more recipient email addresses (accepts a string or an array of strings).
+- `cc`: optional CC recipient email addresses (accepts a string or an array of strings).
+- `bcc`: optional BCC recipient email addresses (accepts a string or an array of strings).
 - `auth.user`: optional SMTP username.
 - `auth.passEnvVar`: environment variable containing the SMTP password.
 
@@ -65,6 +67,7 @@ The SMTP email delivery instance is scoped internally as `emailSmtp`/`email-smtp
 - `enabled`: enables Slack delivery through `@betternotify/slack`.
 - `tokenEnvVar`: environment variable containing the Slack bot token passed to `slackTransport()`.
 - `defaultChannel`: optional Slack channel ID or name used when the rendered payload does not set `to`.
+- `thread`: when `true`, subsequent notifications are sent as replies inside a dedicated thread under the first notification. Defaults to `false`.
 
 Template fields under `success.email` and `error.email`:
 

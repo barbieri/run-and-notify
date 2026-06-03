@@ -31,6 +31,7 @@ export type JsonSchema = Readonly<{
   items?: JsonSchema;
   enum?: readonly unknown[];
   required?: readonly string[];
+  oneOf?: readonly JsonSchema[];
 }>;
 
 export const readConfigSchema = (): JsonSchema => schemaJson as JsonSchema;
@@ -78,6 +79,18 @@ const optionTypeFromSchema = (
   }
   if (schema.type === 'array' || schema.type === 'boolean' || schema.type === 'string') {
     return schema.type;
+  }
+  if (schema.oneOf !== undefined) {
+    const hasArray = schema.oneOf.some((child) => child.type === 'array');
+    if (hasArray) {
+      return 'array';
+    }
+    for (const child of schema.oneOf) {
+      const type = optionTypeFromSchema(child);
+      if (type !== undefined) {
+        return type;
+      }
+    }
   }
   return undefined;
 };
@@ -268,6 +281,33 @@ const formatValidationError = (error: ErrorObject): string => {
 const formatValidationErrors = (errors: ErrorObject[]): string =>
   errors.map(formatValidationError).join('\n');
 
+const normalizeStringOrArray = (val: string | string[]): string[] => {
+  if (typeof val === 'string') {
+    return [val];
+  }
+  return val.map((v) => String(v));
+};
+
+const normalizeConfig = (config: RunAndNotifyConfig): void => {
+  const smtp = config.transports?.smtp;
+  if (smtp) {
+    if (smtp.to !== undefined) {
+      smtp.to = normalizeStringOrArray(smtp.to);
+    }
+    if (smtp.cc !== undefined) {
+      smtp.cc = normalizeStringOrArray(smtp.cc);
+    }
+    if (smtp.bcc !== undefined) {
+      smtp.bcc = normalizeStringOrArray(smtp.bcc);
+    }
+  }
+
+  const slack = config.transports?.slack;
+  if (slack) {
+    slack.thread = !!slack.thread;
+  }
+};
+
 export const parseConfig = (
   configPath: string,
   schema: JsonSchema,
@@ -287,6 +327,8 @@ export const parseConfig = (
     const details = formatValidationErrors(validate.errors as ErrorObject[]);
     throw new Error(`Invalid configuration:\n${details}`);
   }
+
+  normalizeConfig(config);
 
   return config;
 };
@@ -377,6 +419,8 @@ export const parseCli = async (
     const details = formatValidationErrors(validate.errors as ErrorObject[]);
     throw new Error(`Invalid configuration:\n${details}`);
   }
+
+  normalizeConfig(config);
 
   return {
     kind: 'parsed',

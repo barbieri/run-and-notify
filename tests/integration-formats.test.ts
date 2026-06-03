@@ -25,6 +25,7 @@ const makeConfig = (format: OutputFormat): RunAndNotifyConfig => ({
     slack: {
       enabled: true,
       tokenEnvVar: 'SLACK_BOT_TOKEN',
+      thread: false,
     },
   },
   success: {

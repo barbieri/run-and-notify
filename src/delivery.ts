@@ -59,6 +59,12 @@ const createEmailPayload = async (
     subject: subject.trim(),
     html,
   };
+  if (email.cc !== undefined) {
+    payload.cc = email.cc.map((recipient) => ({ email: recipient }));
+  }
+  if (email.bcc !== undefined) {
+    payload.bcc = email.bcc.map((recipient) => ({ email: recipient }));
+  }
   if (text !== undefined) {
     payload.text = text;
   }
@@ -92,7 +98,27 @@ const createSlackPayloads = async (context: TemplateContext): Promise<DeliveryPa
     throw new Error('Slack blocks template must render a JSON array');
   }
 
-  return splitBlocksWithText(parsed).map((batch, index) => {
+  const batches = splitBlocksWithText(parsed);
+  if (slack.thread) {
+    const parent: DeliveryPayload = {
+      channel: 'slack',
+      payload: {
+        text: fallbackText,
+        ...(slack.defaultChannel !== undefined ? { to: slack.defaultChannel } : {}),
+      },
+    };
+    const replies = batches.map((batch) => {
+      const payload: SlackPayload = {
+        text: batch.text || fallbackText,
+        blocks: batch.blocks,
+        ...(slack.defaultChannel !== undefined ? { to: slack.defaultChannel } : {}),
+      };
+      return { channel: 'slack' as const, payload };
+    });
+    return [parent, ...replies];
+  }
+
+  return batches.map((batch, index) => {
     const payload: SlackPayload = {
       text: index === 0 ? fallbackText : batch.text,
       blocks: batch.blocks,
@@ -100,7 +126,7 @@ const createSlackPayloads = async (context: TemplateContext): Promise<DeliveryPa
     if (slack.defaultChannel !== undefined) {
       payload.to = slack.defaultChannel;
     }
-    return { channel: 'slack', payload };
+    return { channel: 'slack' as const, payload };
   });
 };
 
@@ -146,11 +172,18 @@ export const deliverNotifications = async (
     return payloads;
   }
 
+  let threadTs: string | undefined;
+
   for (const delivery of payloads) {
     const transport = transports[delivery.channel];
     if (transport === undefined) {
       throw new Error(`No transport configured for ${delivery.channel}`);
     }
+
+    if (delivery.channel === 'slack' && threadTs !== undefined) {
+      delivery.payload.threadTs = threadTs;
+    }
+
     logger.info(
       { channel: delivery.channel, payload: delivery.payload },
       'sending %s notification',
@@ -162,6 +195,18 @@ export const deliverNotifications = async (
       input: context,
     });
     assertTransportResult(result, delivery.channel);
+
+    if (
+      delivery.channel === 'slack' &&
+      context.config.transports.slack?.thread &&
+      threadTs === undefined &&
+      result !== null &&
+      typeof result === 'object' &&
+      'ok' in result &&
+      result.ok === true
+    ) {
+      threadTs = (result as { data?: { ts?: string } }).data?.ts;
+    }
   }
 
   return payloads;

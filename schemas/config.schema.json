@@ -117,13 +117,55 @@
               "minLength": 1
             },
             "to": {
-              "type": "array",
               "description": "Email recipient addresses.",
-              "items": {
-                "type": "string",
-                "minLength": 1
-              },
-              "minItems": 1
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1
+                }
+              ]
+            },
+            "cc": {
+              "description": "Email CC recipient addresses.",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1
+                }
+              ]
+            },
+            "bcc": {
+              "description": "Email BCC recipient addresses.",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1
+                }
+              ]
             },
             "auth": {
               "type": "object",
@@ -162,6 +204,11 @@
             "defaultChannel": {
               "type": "string",
               "description": "Default Slack channel ID or name used when Slack templates do not set a destination."
+            },
+            "thread": {
+              "type": "boolean",
+              "description": "Whether to send subsequent notifications in a thread under the first notification.",
+              "default": false
             }
           },
           "required": ["enabled", "tokenEnvVar"]

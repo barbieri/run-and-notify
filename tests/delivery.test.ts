@@ -1,5 +1,6 @@
 import { mockTransport as mockEmailTransport } from '@betternotify/email';
 import { mockSlackTransport } from '@betternotify/slack';
+import * as markdownToSlackBlocks from 'markdown-to-slack-blocks';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createDefaultTransports,
@@ -8,7 +9,12 @@ import {
 } from '../src/delivery.js';
 import { createEmailSmtpTransport } from '../src/transports/email-smtp.js';
 import { createSlackTransport } from '../src/transports/slack.js';
-import type { RunAndNotifyConfig, TemplateContext, TransportLike } from '../src/types.js';
+import type {
+  RunAndNotifyConfig,
+  SlackPayload,
+  TemplateContext,
+  TransportLike,
+} from '../src/types.js';
 import { loggerCalls } from './logger-mock.js';
 
 const config: RunAndNotifyConfig = {
@@ -33,6 +39,7 @@ const config: RunAndNotifyConfig = {
       enabled: true,
       tokenEnvVar: 'SLACK_BOT_TOKEN',
       defaultChannel: '#ops',
+      thread: false,
     },
   },
   success: {
@@ -103,6 +110,193 @@ describe('delivery', () => {
         text: 'run-and-notify (succeeded 0): echo hello',
         blocks: expect.arrayContaining([{ type: 'divider' }]),
       },
+    });
+  });
+
+  it('populates to, cc and bcc in the email payload when configured', async () => {
+    const customConfig = {
+      ...config,
+      transports: {
+        ...config.transports,
+        smtp: {
+          ...smtpConfig,
+          to: ['ops@example.com'],
+          cc: ['cc1@example.com', 'cc2@example.com'],
+          bcc: ['bcc1@example.com'],
+        },
+      },
+    };
+    const payloads = await createDeliveryPayloads({
+      ...context,
+      config: customConfig,
+    });
+
+    expect(payloads[0]).toMatchObject({
+      channel: 'emailSmtp',
+      payload: {
+        from: 'bot@example.com',
+        to: [{ email: 'ops@example.com' }],
+        cc: [{ email: 'cc1@example.com' }, { email: 'cc2@example.com' }],
+        bcc: [{ email: 'bcc1@example.com' }],
+        subject: 'run-and-notify',
+      },
+    });
+  });
+
+  it('uses fallback text for threaded Slack replies when batch text is empty', async () => {
+    const splitSpy = vi
+      .spyOn(markdownToSlackBlocks, 'splitBlocksWithText')
+      .mockReturnValue([{ text: '', blocks: [{ type: 'divider' }] }]);
+    try {
+      const customConfig = {
+        ...config,
+        transports: {
+          ...config.transports,
+          slack: {
+            ...slackConfig,
+            thread: true,
+          },
+        },
+      };
+      const payloads = await createDeliveryPayloads({
+        ...context,
+        config: customConfig,
+      });
+
+      expect(payloads[2]).toMatchObject({
+        channel: 'slack',
+        payload: {
+          text: 'run-and-notify (succeeded 0): echo hello',
+          blocks: [{ type: 'divider' }],
+        },
+      });
+    } finally {
+      splitSpy.mockRestore();
+    }
+  });
+
+  it('generates threaded Slack payloads without defaultChannel when omitted', async () => {
+    const customConfig = {
+      ...config,
+      transports: {
+        ...config.transports,
+        slack: {
+          enabled: true,
+          tokenEnvVar: 'SLACK_BOT_TOKEN',
+          thread: true,
+        },
+      },
+    };
+    const payloads = await createDeliveryPayloads({
+      ...context,
+      config: customConfig,
+    });
+
+    expect(payloads[1]).toEqual({
+      channel: 'slack',
+      payload: {
+        text: 'run-and-notify (succeeded 0): echo hello',
+      },
+    });
+    expect(payloads[2]).toMatchObject({
+      channel: 'slack',
+      payload: {
+        text: expect.any(String),
+        blocks: expect.arrayContaining([{ type: 'divider' }]),
+      },
+    });
+    expect(payloads[2]?.payload).not.toHaveProperty('to');
+  });
+
+  it('generates threaded Slack payloads (parent text and reply blocks)', async () => {
+    const customConfig = {
+      ...config,
+      transports: {
+        ...config.transports,
+        slack: {
+          ...slackConfig,
+          thread: true,
+        },
+      },
+    };
+    const payloads = await createDeliveryPayloads({
+      ...context,
+      config: customConfig,
+    });
+
+    // There should be 1 email payload, 1 Slack parent payload, and 1 Slack reply payload (with blocks)
+    expect(payloads).toHaveLength(3);
+
+    // Email payload
+    expect(payloads[0]?.channel).toBe('emailSmtp');
+
+    // Slack parent payload (no blocks)
+    expect(payloads[1]).toEqual({
+      channel: 'slack',
+      payload: {
+        to: '#ops',
+        text: 'run-and-notify (succeeded 0): echo hello',
+      },
+    });
+
+    // Slack reply payload (contains blocks)
+    expect(payloads[2]).toMatchObject({
+      channel: 'slack',
+      payload: {
+        to: '#ops',
+        text: expect.any(String),
+        blocks: expect.arrayContaining([{ type: 'divider' }]),
+      },
+    });
+  });
+
+  it('delivers threaded Slack notifications injecting captured threadTs', async () => {
+    const customConfig = {
+      ...config,
+      transports: {
+        ...config.transports,
+        slack: {
+          ...slackConfig,
+          thread: true,
+        },
+      },
+    };
+
+    const email = mockEmailTransport();
+
+    // A mock transport that records messages sent to it and returns a specific message ts on send
+    const messagesSent: SlackPayload[] = [];
+    const mockSlack: TransportLike = {
+      send: vi.fn().mockImplementation(async (payload) => {
+        messagesSent.push(payload as SlackPayload);
+        return { ok: true, data: { ts: '12345.67890', channel: '#ops' } };
+      }),
+    };
+
+    await deliverNotifications(
+      {
+        ...context,
+        config: customConfig,
+      },
+      {
+        emailSmtp: email,
+        slack: mockSlack,
+      },
+    );
+
+    // Should have sent 2 messages to Slack:
+    // 1. The parent message (no blocks, no threadTs)
+    // 2. The reply message (with blocks, threadTs: '12345.67890')
+    expect(messagesSent).toHaveLength(2);
+    expect(messagesSent[0]).toEqual({
+      to: '#ops',
+      text: 'run-and-notify (succeeded 0): echo hello',
+    });
+    expect(messagesSent[1]).toEqual({
+      to: '#ops',
+      text: expect.any(String),
+      blocks: expect.arrayContaining([{ type: 'divider' }]),
+      threadTs: '12345.67890',
     });
   });
 
@@ -329,6 +523,7 @@ describe('delivery', () => {
         enabled: true,
         tokenEnvVar: 'SLACK_BOT_TOKEN',
         defaultChannel: '#ops',
+        thread: false,
       }),
     ).toEqual(expect.objectContaining({ send: expect.any(Function) }));
   });
@@ -340,6 +535,7 @@ describe('delivery', () => {
       createSlackTransport({
         enabled: true,
         tokenEnvVar: 'SLACK_BOT_TOKEN',
+        thread: false,
       }),
     ).toEqual(expect.objectContaining({ send: expect.any(Function) }));
   });
@@ -351,6 +547,7 @@ describe('delivery', () => {
       createSlackTransport({
         enabled: true,
         tokenEnvVar: 'MISSING_SLACK_TOKEN',
+        thread: false,
       }),
     ).toThrow('Missing required environment variable MISSING_SLACK_TOKEN');
   });

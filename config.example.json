@@ -20,6 +20,8 @@
       "secure": false,
       "from": "run-and-notify@example.com",
       "to": ["ops@example.com"],
+      "cc": ["manager@example.com"],
+      "bcc": ["archive@example.com"],
       "auth": {
         "user": "run-and-notify@example.com",
         "passEnvVar": "SMTP_PASS"
@@ -28,7 +30,8 @@
     "slack": {
       "enabled": true,
       "tokenEnvVar": "SLACK_BOT_TOKEN",
-      "defaultChannel": "#ops"
+      "defaultChannel": "#ops",
+      "thread": false
     }
   },
   "success": {

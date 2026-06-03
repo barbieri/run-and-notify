@@ -139,6 +139,115 @@ describe('config', () => {
     expect(parsed.config.transports.smtp?.to).toEqual(['one@example.com', 'two@example.com']);
   });
 
+  it('normalizes single string overrides for to, cc, and bcc to arrays', async () => {
+    const parsed = await parseCli([
+      '--config=config.example.json',
+      '--transports.smtp.to=single@example.com',
+      '--transports.smtp.cc=cc-single@example.com',
+      '--transports.smtp.bcc=bcc-single@example.com',
+      '--',
+      'node',
+      '-v',
+    ]);
+
+    expectParsed(parsed);
+    expect(parsed.config.transports.smtp?.to).toEqual(['single@example.com']);
+    expect(parsed.config.transports.smtp?.cc).toEqual(['cc-single@example.com']);
+    expect(parsed.config.transports.smtp?.bcc).toEqual(['bcc-single@example.com']);
+  });
+
+  it('normalizes string to, cc, and bcc from config files to arrays of strings', () => {
+    const configPath = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'run-and-notify-smtp-recipients-')),
+      'config.json',
+    );
+    fs.writeFileSync(
+      configPath,
+      `${JSON.stringify(
+        {
+          transports: {
+            smtp: {
+              enabled: true,
+              host: 'smtp.example.com',
+              port: 587,
+              from: 'bot@example.com',
+              to: 'single@example.com',
+              cc: 'cc@example.com',
+              bcc: 'bcc@example.com',
+            },
+          },
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    );
+
+    const config = parseConfig(configPath, schema, defaultsFromSchema(schema));
+
+    expect(config.transports.smtp?.to).toEqual(['single@example.com']);
+    expect(config.transports.smtp?.cc).toEqual(['cc@example.com']);
+    expect(config.transports.smtp?.bcc).toEqual(['bcc@example.com']);
+  });
+
+  it('normalizes slack thread to false when omitted from config files', () => {
+    const configPath = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'run-and-notify-slack-thread-')),
+      'config.json',
+    );
+    fs.writeFileSync(
+      configPath,
+      `${JSON.stringify(
+        {
+          transports: {
+            slack: {
+              enabled: true,
+              tokenEnvVar: 'SLACK_BOT_TOKEN',
+            },
+          },
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    );
+
+    const config = parseConfig(configPath, schema, defaultsFromSchema(schema));
+
+    expect(config.transports.slack?.thread).toBe(false);
+  });
+
+  it('normalizes multiple CLI overrides for cc and bcc to arrays of strings', async () => {
+    const parsed = await parseCli([
+      '--config=config.example.json',
+      '--transports.smtp.cc=cc1@example.com',
+      '--transports.smtp.cc=cc2@example.com',
+      '--transports.smtp.bcc=bcc1@example.com',
+      '--transports.smtp.bcc=bcc2@example.com',
+      '--',
+      'node',
+      '-v',
+    ]);
+
+    expectParsed(parsed);
+    expect(parsed.config.transports.smtp?.cc).toEqual(['cc1@example.com', 'cc2@example.com']);
+    expect(parsed.config.transports.smtp?.bcc).toEqual(['bcc1@example.com', 'bcc2@example.com']);
+  });
+
+  it('derives CLI option types from oneOf schemas without array members', async () => {
+    const parsed = await parseCli(['--custom=value'], {
+      type: 'object',
+      properties: {
+        custom: {
+          oneOf: [{ type: 'string' }, { type: 'number' }],
+        },
+      },
+    });
+
+    expectParsed(parsed);
+    expect(parsed.config).toEqual({ custom: 'value' });
+  });
+
   it('accepts explicit Slack fallback text templates from CLI overrides', async () => {
     const parsed = await parseCli([
       '--success.slack.text=success.slack.text.hbs',
@@ -355,6 +464,20 @@ describe('config', () => {
         definitions: {},
       }),
     ).rejects.toThrow('Schema ref #/definitions/missing was not found');
+  });
+
+  it('ignores oneOf schema leaves when no member maps to a yargs option type', async () => {
+    const parsed = await parseCli(['node'], {
+      type: 'object',
+      properties: {
+        custom: {
+          oneOf: [{ type: 'null' }, { type: 'null' }],
+        },
+      },
+    });
+
+    expectParsed(parsed);
+    expect(parsed.command).toEqual(['node']);
   });
 
   it('ignores schema leaves that yargs cannot represent as options', async () => {

@@ -90,6 +90,8 @@ By default the binary propagates the target command exit status after notificati
 
 SMTP delivery uses `@betternotify/smtp` `smtpTransport()`. Slack delivery uses `@betternotify/slack` `slackTransport()` with `tokenEnvVar` and optional `defaultChannel`; use existing Better-Notify transports and channels unless a provider does not exist.
 
+During config load (`parseConfig` / `parseCli`), normalize `transports.smtp.to`, `cc`, and `bcc` from string or string[] to `string[]`; normalize `transports.slack.thread` to a boolean (defaults to `false`). When `transports.slack.thread` is `true`, delivery sends a parent Slack message with fallback text only, then replies with blocks and injects the parent message `ts` as `threadTs` on subsequent Slack sends.
+
 Config defines [channels](https://better-notify.com/docs/concepts/channels). The input will always be the config, stdout and stderr objects that are needed to render the templates. Each channel will check the stdout/stderr formats in order to define how to format the final payload, for instance Slack will render `blocks()` with sections using the `type: "mrkdwn"` and fenced code blocks for command output/error bodies. Email will always format to HTML using an user-configurable template, by default it will just format each block, checking config.showStderrIfSuccess before formatting the stderr.
 
 Email templates support `subject`, `html`, and `text`; Slack templates support `blocks` plus an optional `text` fallback template. When Slack `text` is omitted, fallback text is generated from command/status. Template defaults live in the schema and point at built-in template filenames, so `templatesDir` can be omitted for the default behavior.

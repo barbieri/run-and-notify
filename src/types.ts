@@ -27,6 +27,8 @@ export type SmtpConfig = {
   secure?: boolean;
   from: string;
   to: string[];
+  cc?: string[];
+  bcc?: string[];
   auth?: {
     user?: string;
     passEnvVar?: string;
@@ -37,6 +39,7 @@ export type SlackConfig = {
   enabled: boolean;
   tokenEnvVar: string;
   defaultChannel?: string;
+  thread: boolean;
 };
 
 export type RunAndNotifyConfig = {
@@ -104,6 +107,8 @@ export type TemplateContext = {
 export type EmailPayload = {
   from: string;
   to: Array<{ email: string }>;
+  cc?: Array<{ email: string }>;
+  bcc?: Array<{ email: string }>;
   subject: string;
   html: string;
   text?: string;
@@ -113,6 +118,7 @@ export type SlackPayload = {
   text: string;
   blocks?: unknown[];
   to?: string;
+  threadTs?: string;
 };
 
 export type DeliveryPayload =
