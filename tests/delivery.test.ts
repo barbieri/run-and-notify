@@ -107,7 +107,7 @@ describe('delivery', () => {
       channel: 'slack',
       payload: {
         to: '#ops',
-        text: 'run-and-notify (succeeded 0): echo hello',
+        text: 'run-and-notify',
         blocks: expect.arrayContaining([{ type: 'divider' }]),
       },
     });
@@ -166,7 +166,7 @@ describe('delivery', () => {
       expect(payloads[2]).toMatchObject({
         channel: 'slack',
         payload: {
-          text: 'run-and-notify (succeeded 0): echo hello',
+          text: 'run-and-notify',
           blocks: [{ type: 'divider' }],
         },
       });
@@ -195,7 +195,7 @@ describe('delivery', () => {
     expect(payloads[1]).toEqual({
       channel: 'slack',
       payload: {
-        text: 'run-and-notify (succeeded 0): echo hello',
+        text: 'run-and-notify',
       },
     });
     expect(payloads[2]).toMatchObject({
@@ -235,7 +235,7 @@ describe('delivery', () => {
       channel: 'slack',
       payload: {
         to: '#ops',
-        text: 'run-and-notify (succeeded 0): echo hello',
+        text: 'run-and-notify',
       },
     });
 
@@ -290,7 +290,7 @@ describe('delivery', () => {
     expect(messagesSent).toHaveLength(2);
     expect(messagesSent[0]).toEqual({
       to: '#ops',
-      text: 'run-and-notify (succeeded 0): echo hello',
+      text: 'run-and-notify',
     });
     expect(messagesSent[1]).toEqual({
       to: '#ops',
@@ -370,7 +370,7 @@ describe('delivery', () => {
     expect(email.sent).toHaveLength(1);
     expect(email.sent[0]?.subject).toBe('run-and-notify');
     expect(slack.messages).toHaveLength(1);
-    expect(slack.messages[0]?.text).toBe('run-and-notify (succeeded 0): echo hello');
+    expect(slack.messages[0]?.text).toBe('run-and-notify');
     expect(loggerCalls).toContainEqual(
       expect.objectContaining({
         level: 'info',

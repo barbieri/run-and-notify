@@ -1,6 +1,6 @@
 import { splitBlocksWithText } from 'markdown-to-slack-blocks';
 import { logger } from './logger.js';
-import { createHandlebars, formatShellCommand, renderTemplateFile } from './templates.js';
+import { createHandlebars, renderTemplateFile } from './templates.js';
 import { createEmailSmtpTransport } from './transports/email-smtp.js';
 import { createSlackTransport } from './transports/slack.js';
 import type {
@@ -79,11 +79,11 @@ const createSlackPayloads = async (context: TemplateContext): Promise<DeliveryPa
   }
 
   const renderedBlocks = await renderOptional(notification.slack.blocks, context);
-  const state = context.status === 0 ? 'succeeded' : 'failed';
   const renderedText = await renderOptional(notification.slack.text, context);
   const fallbackText =
-    renderedText?.trim() ??
-    `${context.status === 0 ? context.config.name : `Failed: ${context.config.name}`} (${state} ${context.status}): ${formatShellCommand(context.command)}`;
+    (renderedText?.trim() ?? context.status === 0)
+      ? context.config.name
+      : `Failed: ${context.config.name}`;
 
   if (renderedBlocks === undefined || renderedBlocks.trim() === '') {
     const payload: SlackPayload = { text: fallbackText };
