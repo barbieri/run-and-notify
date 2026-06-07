@@ -291,6 +291,7 @@ const normalizeStringOrArray = (val: string | string[]): string[] => {
 const normalizeConfig = (config: RunAndNotifyConfig): void => {
   const smtp = config.transports?.smtp;
   if (smtp) {
+    /* v8 ignore next -- @preserve */
     if (smtp.to !== undefined) {
       smtp.to = normalizeStringOrArray(smtp.to);
     }

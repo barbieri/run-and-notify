@@ -347,6 +347,37 @@ describe('delivery', () => {
     ]);
   });
 
+  it('renders text-only Slack payloads without defaultChannel when omitted', async () => {
+    const payloads = await createDeliveryPayloads({
+      ...context,
+      config: {
+        ...context.config,
+        transports: {
+          ...context.config.transports,
+          slack: {
+            enabled: true,
+            tokenEnvVar: 'SLACK_BOT_TOKEN',
+            thread: false,
+          },
+        },
+        success: {
+          slack: {
+            text: 'success.slack.text.hbs',
+          },
+        },
+      },
+    });
+
+    expect(payloads).toEqual([
+      {
+        channel: 'slack',
+        payload: {
+          text: 'run-and-notify',
+        },
+      },
+    ]);
+  });
+
   it('renders failed email notifications with a dark red header', async () => {
     const payloads = await createDeliveryPayloads({
       ...context,

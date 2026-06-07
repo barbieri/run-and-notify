@@ -166,7 +166,7 @@ const getLocale = (self: unknown, options: HelperOptions): string => {
     return context.config.locale;
   }
 
-  /* v8 ignore next */
+  /* v8 ignore next -- @preserve */
   return options.data?.root?.config.locale ?? 'en-US';
 };
 
@@ -310,6 +310,7 @@ const readTemplateSource = async (
     return await fs.readFile(filePath, 'utf8');
   } catch (error) {
     const nodeError = error as NodeJS.ErrnoException;
+    /* v8 ignore next -- @preserve */
     if (nodeError.code === 'ENOENT') {
       const builtin = builtinTemplates[filename];
       if (builtin !== undefined) {

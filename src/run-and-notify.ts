@@ -52,7 +52,7 @@ export const main = async (argv = process.argv.slice(2)): Promise<number> => {
   return parsed.config.propagateExitCode ? result.status : 0;
 };
 
-/* v8 ignore next 11 */
+/* v8 ignore next 11 -- @preserve */
 if (import.meta.url === `file://${process.argv[1]}`) {
   main()
     .then((status) => {
