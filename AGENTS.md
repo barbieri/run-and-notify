@@ -114,6 +114,8 @@ Output formatters live in `src/formatters/*` and are selected through a dispatch
 
 Transport instances are split by provider in `src/transports/*`; SMTP email is scoped as `emailSmtp`/`email-smtp` rather than generic `email`.
 
+Delivery payload construction is split by provider in `src/delivery/*`; keep `src/delivery.ts` as the public facade for `createDeliveryPayloads`, `createDefaultTransports`, and `deliverNotifications`.
+
 Use Pino structured logs with placeholders (`%s`, `%o`, etc.) and positional parameters. Do not interpolate log message strings.
 
 When rendering command lines or cwd values in templates, use `shellCommand command` and `shellToken cwd`. Command arguments are space-delimited; values containing whitespace are wrapped in single quotes with embedded single quotes escaped for shell copy/paste.
