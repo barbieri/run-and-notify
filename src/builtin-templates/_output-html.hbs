@@ -1,1 +1,15 @@
-{{#if (lookup this "raw")}}<pre style="white-space: pre-wrap; background: #0f172a; color: #e2e8f0; border-radius: 12px; padding: 14px 16px; overflow-x: auto;">{{{rawToHtml raw}}}</pre>{{/if}}{{#if (lookup this "markdown")}}{{{markdownToHtml markdown}}}{{/if}}{{#if (lookup this "html")}}{{{html}}}{{/if}}{{#if (lookup this "lines")}}<div style="display: grid; gap: 12px;">{{#each lines}}<article style="border: 1px solid #dbe3ef; border-radius: 12px; padding: 14px 16px; background: #ffffff;"><dl style="margin: 0; display: grid; gap: 8px;">{{#each this}}<div><dt style="font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #64748b; font-weight: 700;">{{@key}}</dt><dd style="margin: 2px 0 0; color: #18212f;">{{jsonValue this}}</dd></div>{{/each}}</dl></article>{{/each}}</div>{{/if}}
+{{~#if (eq format "raw")~}}
+<pre style="white-space: pre-wrap; background: #0f172a; color: #e2e8f0; border-radius: 12px; padding: 14px 16px; overflow-x: auto;">{{{rawToHtml raw}}}</pre>
+{{~/if~}}
+{{~#if (eq format "markdown")~}}
+{{{markdownToHtml markdown}}}
+{{~/if~}}
+{{~#if (eq format "html")~}}
+{{{html}}}
+{{~/if~}}
+{{~#if (eq format "jsonl")~}}
+<div style="display: grid; gap: 12px;">{{#each lines}}<article style="border: 1px solid #dbe3ef; border-radius: 12px; padding: 14px 16px; background: #ffffff;"><dl style="margin: 0; display: grid; gap: 8px;">{{#each this}}<div><dt style="font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #64748b; font-weight: 700;">{{@key}}</dt><dd style="margin: 2px 0 0; color: #18212f;">{{jsonValue this}}</dd></div>{{/each}}</dl></article>{{/each}}</div>
+{{~/if~}}
+{{~#if (eq format "pino")~}}
+<div style="display: grid; gap: 12px;">{{#each lines}}<article style="border: 1px solid #dbe3ef; border-left: 6px solid {{pinoLevelColor level}}; border-radius: 12px; padding: 14px 16px; background: #ffffff;"><p style="margin: 0 0 8px; font-weight: 700; color: {{pinoLevelColor level}}; text-transform: uppercase;">{{pinoLevelLabel level}}</p><p style="margin: 0 0 10px; color: #18212f;">{{pinoMessage this}}</p><dl style="margin: 0; display: grid; gap: 6px;">{{#if (pinoTime this)}}<div><dt style="font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #64748b; font-weight: 700;">time</dt><dd style="margin: 2px 0 0; color: #18212f;">{{datetimeFromUnixEpochMilliseconds (pinoTime this)}}</dd></div>{{/if}}{{#if pid}}<div><dt style="font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #64748b; font-weight: 700;">pid</dt><dd style="margin: 2px 0 0; color: #18212f;">{{jsonValue pid}}</dd></div>{{/if}}{{#if hostname}}<div><dt style="font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #64748b; font-weight: 700;">hostname</dt><dd style="margin: 2px 0 0; color: #18212f;">{{jsonValue hostname}}</dd></div>{{/if}}{{#each (pinoFields this)}}<div style="margin-left: 16px;"><dt style="font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #64748b; font-weight: 700;">{{@key}}</dt><dd style="margin: 2px 0 0; color: #18212f;">{{jsonValue this}}</dd></div>{{/each}}</dl></article>{{/each}}</div>
+{{~/if~}}{{nl~}}

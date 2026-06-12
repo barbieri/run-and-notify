@@ -18,6 +18,7 @@ If the process succeeds, then we'll use the `success` object to determine the te
 
 The command execution captures stdout and stderr as complete strings, then parses them by format. Optionally it understands and parses the following formats for both `--stdout.format` and `--stderr.format` (both defaults to `raw`):
 - `jsonl`: json lines, each line will be parsed to JSON, if it fails then a line in the shape: `{"raw": "<LINE HERE>"}` is created. The template object will be: `{"lines": [{"someKey": "parsed line here"}, {"raw": {"unparsed line"}}]}`
+- `pino`: json lines with Pino log fields. Each valid object is exposed unchanged under `lines`; invalid or non-object lines are wrapped as `{"raw": "<LINE HERE>"}`. Built-in templates derive display labels/colors from `level`, use `msg` as the main text, format `time` as a localized date and short time, and render non-core fields as an indented object.
 - `markdown`: the whole output is converted into a single `{"markdown": "all lines concatenated"}`
 - `html`: the whole output is converted into a single `{"html": "all lines concatenated"}`
 - `raw`: the whole output is converted into a single `{"raw": "all lines concatenated"}`
@@ -29,6 +30,7 @@ The templates will be processed using [handlebars](https://handlebarsjs.com/api-
 - `dateFromUnixEpoch`: parse the Date object from the number of seconds since UNIX epoch and formats to a localized date (using config's `locale`)
 - `timeFromUnixEpoch`: parse the Date object from the number of seconds since UNIX epoch and formats to a localized time (using config's `locale`)
 - `datetimeFromUnixEpoch`: parse the Date object from the number of seconds since UNIX epoch and formats to a localized date and time (using config's `locale`)
+- `datetimeFromUnixEpochMilliseconds`: parse a number of milliseconds since UNIX epoch and format to a localized date and short time (using config's `locale`)
 - `markdownToHtml`: converts the value from Markdown to HTML.
 - `htmlToMarkdown`: converts the HTML to Markdown.
 - `rawToHtml`: converts the value from raw text to HTML, escaping symbols such as `<`, `>`, `&`.
@@ -51,7 +53,7 @@ The templates are always referenced as filenames, which are dynamically loaded b
 
 Template rendering first registers built-in Handlebars templates from `src/builtin-templates.ts`, then overlays files from `templatesDir` when configured; all `.hbs` files in that directory are registered as partials by basename, and underscore-prefixed partials are also registered without the underscore.
 
-Built-in output templates are format-aware: email renders `raw` as escaped `<pre>`, `markdown` as HTML, `html` as provided HTML, and `jsonl` as itemized records; Slack renders Markdown through `markdown-to-slack-blocks`, splits large block batches, separates execution context with a divider, renders `raw` as preformatted rich text, `markdown` as Slack blocks, `html` converted to markdown, and `jsonl` as nested itemized records.
+Built-in output templates are format-aware: email renders `raw` as escaped `<pre>`, `markdown` as HTML, `html` as provided HTML, `jsonl` as itemized records, and `pino` as level-colored log cards; Slack renders Markdown through `markdown-to-slack-blocks`, splits large block batches, separates execution context with a divider, renders `raw` as preformatted rich text, `markdown` as Slack blocks, `html` converted to markdown, `jsonl` as nested itemized records, and `pino` as level/msg bullets with indented fields.
 
 Built-in templates live as maintainable `.hbs` files under `src/builtin-templates/` and are imported by `src/builtin-templates.ts` with `with { type: "text" }`; esbuild must keep `.hbs` configured with the `text` loader, and development/test code keeps a filesystem fallback for those files.
 

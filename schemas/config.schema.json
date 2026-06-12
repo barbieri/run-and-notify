@@ -60,7 +60,7 @@
           "type": "string",
           "description": "How stdout is exposed to templates.",
           "default": "raw",
-          "enum": ["raw", "jsonl", "markdown", "html"]
+          "enum": ["raw", "jsonl", "markdown", "html", "pino"]
         }
       },
       "required": ["format"]
@@ -74,7 +74,7 @@
           "type": "string",
           "description": "How stderr is exposed to templates.",
           "default": "raw",
-          "enum": ["raw", "jsonl", "markdown", "html"]
+          "enum": ["raw", "jsonl", "markdown", "html", "pino"]
         }
       },
       "required": ["format"]

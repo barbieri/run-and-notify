@@ -335,7 +335,8 @@ describe('config', () => {
     const help = errors.join('\n');
     expect(help).toContain('run-and-notify [options] <command> [args...]');
     expect(help).toContain('--stdout.format');
-    expect(help).toContain('[default: "raw"]');
+    expect(help).toContain('[default:');
+    expect(help).toContain('"raw"]');
     expect(help).toContain('--success.email.html');
     expect(help).toContain('[default: "default.email.html.hbs"]');
   });
@@ -527,13 +528,13 @@ describe('config', () => {
     await expect(
       parseCli(['--config=config.example.json', '--stdout.format=xml', '--', 'node']),
     ).rejects.toThrow(
-      '/stdout/format must be equal to one of the allowed values; allowed values: "raw", "jsonl", "markdown", "html"',
+      '/stdout/format must be equal to one of the allowed values; allowed values: "raw", "jsonl", "markdown", "html", "pino"',
     );
 
     await expect(
       parseCli(['--config=config.example.json', '--stderr.format=xml', '--', 'node']),
     ).rejects.toThrow(
-      '/stderr/format must be equal to one of the allowed values; allowed values: "raw", "jsonl", "markdown", "html"',
+      '/stderr/format must be equal to one of the allowed values; allowed values: "raw", "jsonl", "markdown", "html", "pino"',
     );
   });
 

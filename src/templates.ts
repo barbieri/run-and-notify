@@ -106,7 +106,113 @@ const formatJsonlLineForMarkdown = (line: Record<string, unknown>): string => {
   ].join('\n');
 };
 
-const outputToSlackMarkdown = (output: ParsedOutput): string => {
+const formatDate = (value: Date, locale: string, options: Intl.DateTimeFormatOptions): string =>
+  new Intl.DateTimeFormat(locale, options).format(value);
+
+const formatUnixEpochMilliseconds = (value: unknown, locale: string): string =>
+  formatDate(new Date(Number(value)), locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+
+const pinoLevelNames: Record<number, string> = {
+  10: 'trace',
+  20: 'debug',
+  30: 'info',
+  40: 'warn',
+  50: 'error',
+  60: 'fatal',
+};
+
+const pinoLevelColors: Record<string, string> = {
+  trace: '#64748b',
+  debug: '#2563eb',
+  info: '#16a34a',
+  warn: '#ca8a04',
+  error: '#dc2626',
+  fatal: '#9333ea',
+};
+
+const pinoCoreFields = new Set([
+  'level',
+  'time',
+  'timestamp',
+  'pid',
+  'hostname',
+  'name',
+  'msg',
+  'v',
+]);
+
+type PinoTemplateLine = Record<string, unknown> & {
+  msg?: unknown;
+  raw?: unknown;
+  time?: unknown;
+  timestamp?: unknown;
+};
+
+const formatPinoLevelLabel = (level: unknown): string => {
+  if (typeof level === 'number') {
+    return pinoLevelNames[level] ?? `level ${level}`;
+  }
+  if (typeof level === 'string' && level.length > 0) {
+    return level.toLowerCase();
+  }
+  return 'info';
+};
+
+const formatPinoLevelColor = (level: unknown): string =>
+  pinoLevelColors[formatPinoLevelLabel(level)] ?? '#64748b';
+
+const formatPinoMessage = (line: PinoTemplateLine): string => {
+  if (typeof line.msg === 'string') {
+    return line.msg;
+  }
+  if (typeof line.raw === 'string') {
+    return line.raw;
+  }
+  return '';
+};
+
+const pinoTimeValue = (line: PinoTemplateLine): unknown => line.time ?? line.timestamp;
+
+const pinoExtraFields = (line: Record<string, unknown>): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(line).filter(([key]) => !pinoCoreFields.has(key)));
+
+const formatPinoLineForMarkdown = (
+  line: ParsedOutput & { format: 'pino' },
+  locale: string,
+): string =>
+  line.lines
+    .map((pinoLine) => {
+      const time = pinoTimeValue(pinoLine);
+      const heading = [
+        `- **${escapeMarkdown(formatPinoLevelLabel(pinoLine.level).toUpperCase())}:** ${escapeMarkdown(formatPinoMessage(pinoLine))}`,
+      ];
+      if (time !== undefined) {
+        heading.push(`  - **time:** ${escapeMarkdown(formatUnixEpochMilliseconds(time, locale))}`);
+      }
+      if (pinoLine.pid !== undefined) {
+        heading.push(`  - **pid:** ${escapeMarkdown(formatJsonValue(pinoLine.pid))}`);
+      }
+      if (pinoLine.hostname !== undefined) {
+        heading.push(`  - **hostname:** ${escapeMarkdown(formatJsonValue(pinoLine.hostname))}`);
+      }
+      const fieldEntries = Object.entries(pinoExtraFields(pinoLine));
+      if (fieldEntries.length > 0) {
+        heading.push(
+          '  - **fields:**',
+          ...fieldEntries.map(
+            ([key, value]) =>
+              `    - **${escapeMarkdown(key)}:** ${escapeMarkdown(formatJsonValue(value))}`,
+          ),
+        );
+      }
+      return heading.join('\n');
+    })
+    .join('\n');
+
+const outputToSlackMarkdown = (output: ParsedOutput, locale = 'en-US'): string => {
   if (output.format === 'raw') {
     return formatSlackCodeBlock(output.raw);
   }
@@ -115,6 +221,9 @@ const outputToSlackMarkdown = (output: ParsedOutput): string => {
   }
   if (output.format === 'html') {
     return turndown.turndown(output.html);
+  }
+  if (output.format === 'pino') {
+    return formatPinoLineForMarkdown(output, locale);
   }
 
   return output.lines.map(formatJsonlLineForMarkdown).join('\n');
@@ -126,9 +235,9 @@ const shouldHideCommandOnSuccess = (context: TemplateContext): boolean =>
 const buildDefaultSlackMarkdown = (context: TemplateContext): string => {
   const hideCommand = shouldHideCommandOnSuccess(context);
   if (hideCommand) {
-    const sections = [outputToSlackMarkdown(context.stdout)];
+    const sections = [outputToSlackMarkdown(context.stdout, context.config.locale)];
     if (outputToText(context.stderr).length > 0 && context.config.showStderrIfSuccess) {
-      sections.push('**Errors**', outputToSlackMarkdown(context.stderr));
+      sections.push('**Errors**', outputToSlackMarkdown(context.stderr, context.config.locale));
     }
     return sections.join('\n\n');
   }
@@ -141,14 +250,14 @@ const buildDefaultSlackMarkdown = (context: TemplateContext): string => {
     `**CWD:** \`${formatShellToken(context.cwd)}\``,
     '---',
     '**Output**',
-    outputToSlackMarkdown(context.stdout),
+    outputToSlackMarkdown(context.stdout, context.config.locale),
   ];
 
   if (
     outputToText(context.stderr).length > 0 &&
     (context.status !== 0 || context.config.showStderrIfSuccess)
   ) {
-    sections.push('**Errors**', outputToSlackMarkdown(context.stderr));
+    sections.push('**Errors**', outputToSlackMarkdown(context.stderr, context.config.locale));
   }
 
   return sections.join('\n\n');
@@ -156,9 +265,6 @@ const buildDefaultSlackMarkdown = (context: TemplateContext): string => {
 
 const buildDefaultSlackBlocks = (context: TemplateContext): unknown[] =>
   markdownToBlocks(buildDefaultSlackMarkdown(context));
-
-const formatDate = (value: Date, locale: string, options: Intl.DateTimeFormatOptions): string =>
-  new Intl.DateTimeFormat(locale, options).format(value);
 
 const getLocale = (self: unknown, options: HelperOptions): string => {
   if (self !== null && typeof self === 'object' && 'config' in self) {
@@ -245,6 +351,12 @@ const registerHelpers = (instance: typeof Handlebars): typeof Handlebars => {
       });
     },
   );
+  instance.registerHelper(
+    'datetimeFromUnixEpochMilliseconds',
+    function (this: unknown, value: unknown, options) {
+      return formatUnixEpochMilliseconds(value, getLocale(this, options));
+    },
+  );
   instance.registerHelper('markdownToHtml', (value: unknown) =>
     marked.parse(asString(value), { async: false }),
   );
@@ -259,6 +371,21 @@ const registerHelpers = (instance: typeof Handlebars): typeof Handlebars => {
   );
   instance.registerHelper('jsonValue', (value: unknown) => formatJsonValue(value));
   instance.registerHelper('jsonString', (value: unknown) => JSON.stringify(asString(value)));
+  instance.registerHelper('pinoLevelColor', (value: unknown) => formatPinoLevelColor(value));
+  instance.registerHelper('pinoLevelLabel', (value: unknown) => formatPinoLevelLabel(value));
+  instance.registerHelper('pinoMessage', (value: unknown) =>
+    value !== null && typeof value === 'object' ? formatPinoMessage(value as PinoTemplateLine) : '',
+  );
+  instance.registerHelper('pinoTime', (value: unknown) =>
+    value !== null && typeof value === 'object'
+      ? pinoTimeValue(value as PinoTemplateLine)
+      : undefined,
+  );
+  instance.registerHelper('pinoFields', (value: unknown) =>
+    value !== null && typeof value === 'object'
+      ? pinoExtraFields(value as Record<string, unknown>)
+      : {},
+  );
   instance.registerHelper('shellToken', (value: unknown) => formatShellToken(value));
   instance.registerHelper('shellCommand', (value: unknown) => formatShellCommand(value));
   instance.registerHelper('slackCodeBlock', (value: unknown) => formatSlackCodeBlock(value));
@@ -266,6 +393,7 @@ const registerHelpers = (instance: typeof Handlebars): typeof Handlebars => {
   instance.registerHelper('concat', (...args: unknown[]) =>
     args.slice(0, -1).map(asString).join(''),
   );
+  instance.registerHelper('eq', (left: unknown, right: unknown) => left === right);
   instance.registerHelper('outputToSlack', (value: unknown) => {
     if (value !== null && typeof value === 'object' && 'format' in value) {
       return outputToSlackMarkdown(value as ParsedOutput);

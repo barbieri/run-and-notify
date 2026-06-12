@@ -77,6 +77,7 @@ describe('template helpers', () => {
         '{{dateFromUnixEpoch 1767357296}}',
         '{{timeFromUnixEpoch 1767357296}}',
         '{{datetimeFromUnixEpoch 1767357296}}',
+        '{{datetimeFromUnixEpochMilliseconds 1767357296000}}',
         '{{{markdownToHtml "**bold**"}}}',
         '{{htmlToMarkdown "<p>hello <strong>html</strong></p>"}}',
         '{{{rawToHtml stdout.raw}}}',
@@ -89,6 +90,18 @@ describe('template helpers', () => {
         '{{{shellToken spacedCwd}}}',
         '{{{slackCodeBlock stdout}}}',
         '{{concat "a" "b" "c"}}',
+        '{{eq stdout.format "raw"}}',
+        '{{pinoLevelLabel "debug"}}',
+        '{{pinoLevelLabel missing}}',
+        '{{pinoLevelColor 35}}',
+        '{{pinoMessage rawPinoLine}}',
+        '{{pinoMessage emptyPinoLine}}',
+        '{{pinoMessage "not-object"}}',
+        '{{datetimeFromUnixEpochMilliseconds (pinoTime timestampPinoLine)}}',
+        '{{pinoTime "not-object"}}',
+        '{{json (pinoFields timestampPinoLine)}}',
+        '{{json (pinoFields missing)}}',
+        '{{json (pinoFields "not-object")}}',
         '{{outputToSlack stdout}}',
         '{{outputToSlack missing}}',
         '{{hasOutput stdout}}',
@@ -100,12 +113,22 @@ describe('template helpers', () => {
 
     const handlebars = await createHandlebars(templatesDir);
     const context: TemplateContext & {
+      emptyPinoLine: Record<string, never>;
+      rawPinoLine: { raw: string };
       spacedCommand: string[];
       spacedCwd: string;
+      timestampPinoLine: { timestamp: number; operation: string; msg: string };
     } = {
       ...makeContext(templatesDir),
+      emptyPinoLine: {},
+      rawPinoLine: { raw: 'raw pino fallback' },
       spacedCommand: ['node', 'script with spaces.mjs', "John's report"],
       spacedCwd: '/tmp/project with spaces',
+      timestampPinoLine: {
+        timestamp: 1767357296000,
+        operation: 'slacrawl.listColumns',
+        msg: 'query completed',
+      },
     };
     const rendered = await renderTemplateFile(handlebars, templatesDir, 'helpers.hbs', context);
 
@@ -119,6 +142,11 @@ describe('template helpers', () => {
     expect(rendered).toContain("node 'script with spaces.mjs' 'John'\\''s report'");
     expect(rendered).toContain("'/tmp/project with spaces'");
     expect(rendered).toContain('```\nraw <stdout>\n```');
+    expect(rendered).toContain('debug');
+    expect(rendered).toContain('info');
+    expect(rendered).toContain('#64748b');
+    expect(rendered).toContain('raw pino fallback');
+    expect(rendered).toContain('slacrawl.listColumns');
     expect(rendered).toContain('abc');
     expect(rendered).toContain('partial: ok');
   });
@@ -137,6 +165,9 @@ describe('template helpers', () => {
     expect(formatSlackCodeBlock(parseOutput('{"msg":"hello"}', { format: 'jsonl' }))).toBe(
       '```\n{"msg": "hello"}\n```',
     );
+    expect(
+      formatSlackCodeBlock(parseOutput('{"level":30,"msg":"hello"}', { format: 'pino' })),
+    ).toBe('```\n{"level": 30, "msg": "hello"}\n```');
   });
 
   it('allows missing template directories, rejects path traversal, and rethrows other read errors', async () => {
@@ -227,6 +258,30 @@ describe('template helpers', () => {
     expect(rendered).toContain('<dt');
     expect(rendered).toContain('title');
     expect(rendered).toContain('[&quot;one&quot;,&quot;two&quot;]');
+  });
+
+  it('renders default email Pino output as level-colored log cards', async () => {
+    const handlebars = await createHandlebars(undefined);
+    const rendered = await renderTemplateFile(
+      handlebars,
+      undefined,
+      'default.email.html.hbs',
+      makeBuiltinContext(
+        parseOutput(
+          '{"level":40,"time":1767357296000,"pid":123,"hostname":"worker-1","reqId":"abc","msg":"retrying job"}',
+          { format: 'pino' },
+        ),
+      ),
+    );
+
+    expect(rendered).toContain('border-left: 6px solid #ca8a04');
+    expect(rendered).toContain('warn');
+    expect(rendered).toContain('retrying job');
+    expect(rendered).toContain('Jan 2, 2026');
+    expect(rendered).not.toContain('1767357296000');
+    expect(rendered).not.toContain(':56');
+    expect(rendered).toContain('reqId');
+    expect(rendered).toContain('abc');
   });
 
   it('hides success command metadata, output headers, and separators when configured', async () => {
@@ -434,5 +489,40 @@ describe('template helpers', () => {
     expect(renderedJson).toContain('message:');
     expect(renderedJson).toContain('DIGEST_RETRY');
     expect(renderedJson).toContain('"indent":1');
+  });
+
+  it('renders default Slack Pino output with level, message, and indented fields', async () => {
+    const handlebars = await createHandlebars(undefined);
+    const rendered = await renderTemplateFile(
+      handlebars,
+      undefined,
+      'default.slack.blocks.json.hbs',
+      makeBuiltinContext(
+        parseOutput(
+          [
+            '{"level":50,"time":1767357296000,"pid":123,"hostname":"worker-1","reqId":"abc","err":{"message":"boom"},"msg":"job failed"}',
+            '{"level":30,"msg":"job complete"}',
+          ].join('\n'),
+          { format: 'pino' },
+        ),
+      ),
+    );
+    const blocks = JSON.parse(rendered) as Array<{
+      type: string;
+      elements?: Array<{ type: string; indent?: number; elements?: unknown[] }>;
+    }>;
+    const renderedJson = JSON.stringify(blocks);
+
+    expect(renderedJson).toContain('ERROR:');
+    expect(renderedJson).toContain('job failed');
+    expect(renderedJson).toContain('Jan 2, 2026');
+    expect(renderedJson).not.toContain('1767357296000');
+    expect(renderedJson).not.toContain(':56');
+    expect(renderedJson).toContain('fields:');
+    expect(renderedJson).toContain('reqId:');
+    expect(renderedJson).toContain('abc');
+    expect(renderedJson).toContain('err:');
+    expect(renderedJson).toContain('job complete');
+    expect(renderedJson).toContain('"indent":2');
   });
 });

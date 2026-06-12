@@ -1,4 +1,4 @@
-export type OutputFormat = 'raw' | 'jsonl' | 'markdown' | 'html';
+export type OutputFormat = 'raw' | 'jsonl' | 'markdown' | 'html' | 'pino';
 
 export type OutputConfig = {
   format: OutputFormat;
@@ -78,7 +78,19 @@ export type ParsedOutput =
   | {
       format: 'jsonl';
       lines: Array<Record<string, unknown>>;
+    }
+  | {
+      format: 'pino';
+      lines: PinoLogLine[];
     };
+
+export type PinoLogLine = Record<string, unknown> & {
+  level?: unknown;
+  time?: unknown;
+  pid?: unknown;
+  hostname?: unknown;
+  msg?: unknown;
+};
 
 export type CommandResult = {
   command: string[];

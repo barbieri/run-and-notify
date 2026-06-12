@@ -1,2 +1,4 @@
-{{#if (lookup this "raw")}}{{raw}}{{/if}}{{#if (lookup this "markdown")}}{{markdown}}{{/if}}{{#if (lookup this "html")}}{{htmlToMarkdown html}}{{/if}}{{#if (lookup this "lines")}}{{#each lines}}{{#each this}}{{@key}}: {{this}}{{#unless @last}}, {{/unless}}{{/each}}{{#unless @last}}
-{{/unless}}{{/each}}{{/if}}
+{{#if (lookup this "raw")}}{{raw}}{{/if}}{{#if (lookup this "markdown")}}{{markdown}}{{/if}}{{#if (lookup this "html")}}{{htmlToMarkdown html}}{{/if}}{{#if (lookup this "lines")}}{{#if (eq format "pino")}}{{#each lines}}{{pinoLevelLabel level}}: {{pinoMessage this}}{{#if (pinoTime this)}} ({{datetimeFromUnixEpochMilliseconds (pinoTime this)}}){{/if}}{{#each (pinoFields this)}}
+  {{@key}}: {{jsonValue this}}{{/each}}{{#unless @last}}
+{{/unless}}{{/each}}{{else}}{{#each lines}}{{#each this}}{{@key}}: {{this}}{{#unless @last}}, {{/unless}}{{/each}}{{#unless @last}}
+{{/unless}}{{/each}}{{/if}}{{/if}}

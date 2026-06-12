@@ -54,6 +54,7 @@ describe('sample output formats', () => {
     ['jsonl', 'output-jsonl.mjs'],
     ['markdown', 'output-markdown.mjs'],
     ['html', 'output-html.mjs'],
+    ['pino', 'output-pino.mjs'],
     ['raw', 'output-raw.mjs'],
   ] as const)('runs %s sample script and renders notifications', async (format, fixture) => {
     const config = makeConfig(format);
@@ -81,6 +82,10 @@ describe('sample output formats', () => {
     expect(JSON.stringify(payloads)).toContain('Output');
     if (format === 'raw') {
       expect(JSON.stringify(payloads)).toContain('rich_text_preformatted');
+    }
+    if (format === 'pino') {
+      expect(JSON.stringify(payloads)).toContain('stdout pino message');
+      expect(JSON.stringify(payloads)).toContain('reqId');
     }
     expect(JSON.stringify(payloads)).not.toContain('*stdout*\\n');
   });

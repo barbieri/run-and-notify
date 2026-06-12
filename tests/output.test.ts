@@ -16,6 +16,70 @@ describe('parseOutput', () => {
     });
   });
 
+  it('parses pino output as log records and wraps invalid lines', () => {
+    expect(
+      parseOutput(
+        [
+          '{"level":50,"time":1767357296000,"pid":123,"hostname":"worker-1","reqId":"abc","msg":"failed <job>"}',
+          'not json',
+        ].join('\n'),
+        { format: 'pino' },
+      ),
+    ).toEqual({
+      format: 'pino',
+      lines: [
+        {
+          level: 50,
+          time: 1767357296000,
+          pid: 123,
+          hostname: 'worker-1',
+          reqId: 'abc',
+          msg: 'failed <job>',
+        },
+        {
+          raw: 'not json',
+        },
+      ],
+    });
+  });
+
+  it('keeps pino string levels, unknown levels, message fields, and non-object JSON', () => {
+    const parsed = parseOutput(
+      [
+        '{"level":"debug","msg":"debugging","traceId":"trace-1"}',
+        '{"level":35,"message":"custom level"}',
+        '{"msg":"missing level"}',
+        '{"level":30}',
+        '42',
+      ].join('\n'),
+      { format: 'pino' },
+    );
+
+    expect(parsed).toMatchObject({
+      format: 'pino',
+      lines: [
+        {
+          level: 'debug',
+          msg: 'debugging',
+          traceId: 'trace-1',
+        },
+        {
+          level: 35,
+          message: 'custom level',
+        },
+        {
+          msg: 'missing level',
+        },
+        {
+          level: 30,
+        },
+        {
+          raw: '42',
+        },
+      ],
+    });
+  });
+
   it('keeps raw output as a complete string', () => {
     expect(parseOutput('a\nb\n', { format: 'raw' })).toEqual({
       format: 'raw',
