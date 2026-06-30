@@ -38,4 +38,6 @@ await esbuild.build({
   },
 });
 
+fs.chmodSync(path.join(BUNDLE_DIR, 'run-and-notify.mjs'), 0o755);
+
 console.log(`Wrote minified CLI bundles to ${BUNDLE_DIR}/`);

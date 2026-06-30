@@ -172,6 +172,7 @@ pnpm run test
 ## npm publish
 
 - **`prepublishOnly`** runs `pnpm run build` (minified `dist/bundle/*.mjs` with shebangs).
+- `scripts/build-cli.mjs` must keep `dist/bundle/run-and-notify.mjs` executable (`755`) because it is the npm `bin` target.
 - **`files`** ships bundles, `schemas/`, examples, and docs only (no `src/` or dev tooling).
 - **`bin`**: `run-and-notify` → `dist/bundle/*.mjs`.
 - **`prepare`** runs Husky only in a git clone with dev deps, not on end-user `npm install`.
