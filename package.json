@@ -1,6 +1,6 @@
 {
   "name": "run-and-notify",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Execute a command and send the notification results via better-notify",
   "repository": {
     "type": "git",
@@ -19,9 +19,10 @@
     "run-and-notify"
   ],
   "engines": {
-    "node": ">=24.15.0"
+    "node": ">=26.4.0",
+    "pnpm": ">=11.9.0"
   },
-  "packageManager": "pnpm@11.5.0",
+  "packageManager": "pnpm@11.9.0",
   "files": [
     "dist/bundle",
     "schemas",

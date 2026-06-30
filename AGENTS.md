@@ -128,7 +128,7 @@ Use `slackCodeBlock` in Slack block templates whenever rendering command output 
 
 - **Node** see `.nvmrc`
 - **TypeScript** `tsconfig.json` extends `@tsconfig/strictest` with `"types": ["node"]`
-- **pnpm** v11 for package management (`packageManager` pins Corepack version)
+- **pnpm** via Corepack (`packageManager` pins the version)
 - **Biome** — formatting and lint (`biome.json`: JavaScript/TypeScript **single quotes**)
 - **Vitest** — run `pnpm run test`; currently pinned to 3.2.x to avoid the Vitest 4/Rolldown native binding path on macOS. Runtime source coverage is enforced at 100% statements/branches/functions/lines.
 - **Pino** — used for structured CLI logs, including dry-run payload inspection.
