@@ -438,6 +438,45 @@ describe('template helpers', () => {
     ).resolves.toBe('');
   });
 
+  it('converts HTML tables to markdown output', async () => {
+    const templatesDir = await fs.mkdtemp(path.join(os.tmpdir(), 'run-and-notify-templates-'));
+    await fs.writeFile(path.join(templatesDir, 'table.hbs'), '{{htmlToMarkdown html}}', 'utf8');
+    const handlebars = await createHandlebars(templatesDir);
+
+    const markdownTable = `\
+| Header | Other |
+| --- | --- |
+| Text | Escape \\| and \\\\ |`;
+
+    await expect(
+      renderTemplateFile(handlebars, templatesDir, 'table.hbs', {
+        ...makeContext(templatesDir),
+        html: `\
+<table>
+  <thead>
+    <tr><th>Header</th><th>Other</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Text</td><td>Escape | and \\</td></tr>
+  </tbody>
+</table>
+`,
+      } as TemplateContext & { html: string }),
+    ).resolves.toBe(markdownTable);
+
+    await expect(
+      renderTemplateFile(handlebars, templatesDir, 'table.hbs', {
+        ...makeContext(templatesDir),
+        html: `\
+<table>
+  <tr><th>Header</th><th>Other</th></tr>
+  <tr><td>Text</td><td>Escape | and \\</td></tr>
+</table>
+`,
+      } as TemplateContext & { html: string }),
+    ).resolves.toBe(markdownTable);
+  });
+
   it('renders default Slack JSONL output as itemized markdown', async () => {
     const handlebars = await createHandlebars(undefined);
     const rendered = await renderTemplateFile(

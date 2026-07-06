@@ -30,7 +30,10 @@ turndown.addRule('table', {
 
     const separator = header.map(() => '---');
     return `\n\n${[header, separator, ...body]
-      .map((row) => `| ${row.map((cell) => cell.replace(/\|/g, '\\|')).join(' | ')} |`)
+      .map(
+        (row) =>
+          `| ${row.map((cell) => cell.replace(/\\/g, '\\\\').replace(/\|/g, '\\|')).join(' | ')} |`,
+      )
       .join('\n')}\n\n`;
   },
 });
