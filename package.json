@@ -52,7 +52,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
-    "@betternotify/core": "1.0.0-beta.9",
+    "@betternotify/core": "1.0.0-beta.10",
     "@betternotify/email": "1.0.0-beta.5",
     "@betternotify/slack": "1.0.0-beta.5",
     "@betternotify/smtp": "1.0.0-beta.4",
