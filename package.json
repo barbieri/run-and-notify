@@ -59,7 +59,7 @@
     "@biomejs/biome": "^2.4.16",
     "@tsconfig/strictest": "^2.0.8",
     "@types/lodash": "^4.17.24",
-    "@types/node": "^25.9.1",
+    "@types/node": "^26.1.0",
     "@types/turndown": "^5.0.6",
     "@types/yargs": "^17.0.35",
     "@vitest/coverage-v8": "4.1.8",
