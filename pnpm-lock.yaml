@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  nodemailer: 9.0.3
+
 importers:
 
   .:
@@ -1383,8 +1386,8 @@ packages:
   nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
 
-  nodemailer@8.0.7:
-    resolution: {integrity: sha512-pkjE4mkBzQjdJT4/UmlKl3pX0rC9fZmjh7c6C9o7lv66Ac6w9WCnzPzhbPNxwZAzlF4mdq4CSWB5+FbK6FWCow==}
+  nodemailer@9.0.3:
+    resolution: {integrity: sha512-n+YP+NKwR5zRWa60k3GiQ6Q3B4KXCoAw40dAKeCtYn020iNN74aWK2liXIC3ZEATeGql7we3tE3t8QwhY0eskw==}
     engines: {node: '>=6.0.0'}
 
   normalize-package-data@2.5.0:
@@ -1921,7 +1924,7 @@ snapshots:
     dependencies:
       '@betternotify/core': 1.0.0-beta.10
       '@betternotify/email': 1.0.0-beta.6
-      nodemailer: 8.0.7
+      nodemailer: 9.0.3
 
   '@biomejs/biome@2.5.2':
     optionalDependencies:
@@ -3229,7 +3232,7 @@ snapshots:
 
   nice-try@1.0.5: {}
 
-  nodemailer@8.0.7: {}
+  nodemailer@9.0.3: {}
 
   normalize-package-data@2.5.0:
     dependencies:

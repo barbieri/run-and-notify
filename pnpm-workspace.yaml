@@ -4,4 +4,7 @@ packages:
 allowBuilds:
   esbuild: true
 
+overrides:
+  nodemailer: "9.0.3"
+
 minimumReleaseAge: 2880
