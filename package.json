@@ -53,7 +53,7 @@
   },
   "devDependencies": {
     "@betternotify/core": "1.0.0-beta.9",
-    "@betternotify/email": "1.0.0-beta.5",
+    "@betternotify/email": "1.0.0-beta.6",
     "@betternotify/slack": "1.0.0-beta.5",
     "@betternotify/smtp": "1.0.0-beta.4",
     "@biomejs/biome": "^2.4.16",
