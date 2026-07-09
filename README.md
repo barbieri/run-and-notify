@@ -78,8 +78,8 @@ Template fields under `success.email` and `error.email`:
 
 Template fields under `success.slack` and `error.slack`:
 
-- `text`: optional Slack fallback text template filename. When omitted, fallback text is generated from command and status.
-- `blocks`: Slack blocks template filename; it must render a JSON array. Slack fallback text is generated from the command and status.
+- `text`: optional Slack fallback text template filename. When omitted, success fallback text is `config.name`; failure fallback text is `Failed: {name} (status {code})`.
+- `blocks`: Slack blocks template filename; it must render a JSON array. Slack fallback text uses the `text` template when configured, otherwise the defaults above.
 
 By default, `success` and `error` use built-in email and Slack templates. You can override any template with config or CLI flags such as `--success.email.html=custom-success.html.hbs`.
 

@@ -282,7 +282,7 @@
       "properties": {
         "text": {
           "type": "string",
-          "description": "Optional Handlebars template filename used for Slack fallback text. When omitted, fallback text is generated from command and status."
+          "description": "Optional Handlebars template filename used for Slack fallback text. When omitted, success fallback text is config.name and failure fallback text is Failed: {name} (status {code})."
         },
         "blocks": {
           "type": "string",

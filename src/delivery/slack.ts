@@ -12,9 +12,10 @@ export const createSlackPayloads = async (context: TemplateContext): Promise<Del
   const renderedBlocks = await renderOptional(notification.slack.blocks, context);
   const renderedText = await renderOptional(notification.slack.text, context);
   const fallbackText =
-    (renderedText?.trim() ?? context.status === 0)
+    renderedText?.trim() ??
+    (context.status === 0
       ? context.config.name
-      : `Failed: ${context.config.name}`;
+      : `Failed: ${context.config.name} (status ${context.status})`);
 
   if (renderedBlocks === undefined || renderedBlocks.trim() === '') {
     const payload: SlackPayload = { text: fallbackText };

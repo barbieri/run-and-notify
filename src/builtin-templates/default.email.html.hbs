@@ -8,6 +8,7 @@
           <h1 style="margin: 0; font-size: 22px;">{{#if status}}Failed: {{/if}}{{config.name}}</h1>
         </header>
         <div style="padding: 20px 24px; background: #f8fafc;">
+          <p><strong>Status:</strong> <code>{{status}}</code></p>
           <p><strong>Command:</strong> <code>{{shellCommand command}}</code></p>
           <p><strong>CWD:</strong> <code>{{shellToken cwd}}</code></p>
         </div>

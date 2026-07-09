@@ -387,7 +387,16 @@ describe('delivery', () => {
     expect(payloads[0]).toMatchObject({
       channel: 'emailSmtp',
       payload: {
-        html: expect.stringContaining('background: #7f1d1d'),
+        subject: 'Failed: run-and-notify (status 2)',
+        html: expect.stringMatching(
+          /background: #7f1d1d[\s\S]*<strong>Status:<\/strong> <code>2<\/code>/,
+        ),
+      },
+    });
+    expect(payloads[1]).toMatchObject({
+      channel: 'slack',
+      payload: {
+        text: 'Failed: run-and-notify (status 2)',
       },
     });
   });
