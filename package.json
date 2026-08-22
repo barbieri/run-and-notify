@@ -1,6 +1,6 @@
 {
   "name": "run-and-notify",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Execute a command and send the notification results via better-notify",
   "repository": {
     "type": "git",
