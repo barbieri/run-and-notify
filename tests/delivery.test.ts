@@ -300,6 +300,78 @@ describe('delivery', () => {
     });
   });
 
+  it('forwards Slack unfurlLinks and unfurlMedia onto every payload when configured', async () => {
+    const customConfig = {
+      ...config,
+      transports: {
+        ...config.transports,
+        slack: {
+          ...slackConfig,
+          unfurlLinks: false,
+          unfurlMedia: false,
+        },
+      },
+    };
+    const payloads = await createDeliveryPayloads({
+      ...context,
+      config: customConfig,
+    });
+
+    expect(payloads[1]).toMatchObject({
+      channel: 'slack',
+      payload: {
+        to: '#ops',
+        unfurlLinks: false,
+        unfurlMedia: false,
+      },
+    });
+  });
+
+  it('omits Slack unfurl fields when not configured', async () => {
+    const payloads = await createDeliveryPayloads(context);
+
+    expect(payloads[1]?.payload).not.toHaveProperty('unfurlLinks');
+    expect(payloads[1]?.payload).not.toHaveProperty('unfurlMedia');
+  });
+
+  it('forwards unfurl flags onto threaded parent and reply payloads', async () => {
+    const customConfig = {
+      ...config,
+      transports: {
+        ...config.transports,
+        slack: {
+          ...slackConfig,
+          thread: true,
+          unfurlLinks: false,
+          unfurlMedia: true,
+        },
+      },
+    };
+    const payloads = await createDeliveryPayloads({
+      ...context,
+      config: customConfig,
+    });
+
+    expect(payloads[1]).toEqual({
+      channel: 'slack',
+      payload: {
+        to: '#ops',
+        text: 'run-and-notify',
+        unfurlLinks: false,
+        unfurlMedia: true,
+      },
+    });
+    expect(payloads[2]).toMatchObject({
+      channel: 'slack',
+      payload: {
+        to: '#ops',
+        unfurlLinks: false,
+        unfurlMedia: true,
+        blocks: expect.arrayContaining([{ type: 'divider' }]),
+      },
+    });
+  });
+
   it('renders Slack fallback text from template when configured', async () => {
     const payloads = await createDeliveryPayloads({
       ...context,

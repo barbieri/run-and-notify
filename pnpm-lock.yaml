@@ -18,8 +18,8 @@ importers:
         specifier: 1.0.0-beta.6
         version: 1.0.0-beta.6
       '@betternotify/slack':
-        specifier: 1.0.0-beta.6
-        version: 1.0.0-beta.6
+        specifier: 1.0.0-beta.7
+        version: 1.0.0-beta.7
       '@betternotify/smtp':
         specifier: 1.0.0-beta.5
         version: 1.0.0-beta.5
@@ -123,12 +123,16 @@ packages:
     resolution: {integrity: sha512-LccXcvSrEjkC8kS5LdT40fI8SJKBoelMR+XtPfCZaBqut6fuP1pNZ+JaJ7uWoOyJkOzdqJT+ROt36WYLalsihw==}
     engines: {node: '>=22'}
 
+  '@betternotify/core@1.0.0-beta.11':
+    resolution: {integrity: sha512-AfHg5/7HiMZS2UUu+cbL/Vo/EYX+u5OW2Vja3bN015RaACjnjLpBtBnqyMujSNAQs0IqHt2e3WsmBw/VCFEdXg==}
+    engines: {node: '>=22'}
+
   '@betternotify/email@1.0.0-beta.6':
     resolution: {integrity: sha512-7dD2VxKgw+hD6Hi90iBwNsbaxvuQCdhHE7OQdbXcoecDtvNL9XftqzFWGKC8BYrKL+Hq/TFQPcAp3ivpw0Diiw==}
     engines: {node: '>=22'}
 
-  '@betternotify/slack@1.0.0-beta.6':
-    resolution: {integrity: sha512-7ZfttgrWjMOxXd1BWngOFVCaapJku5Tx3ebMXXktqjFpjcsAO7jzRHR/2AjZb+alFS9e/B+Iw1KwiYMl8Inu9A==}
+  '@betternotify/slack@1.0.0-beta.7':
+    resolution: {integrity: sha512-CJWCPcQwRi1t6ogIqC8ij1lNL/HkMHhsXAY8RGrUIyumStQPDMvQ0md6vLZFMdlFzm8Ys5FjGrtvlhzldxUVxQ==}
     engines: {node: '>=22'}
 
   '@betternotify/smtp@1.0.0-beta.5':
@@ -1909,14 +1913,19 @@ snapshots:
       '@better-fetch/fetch': 1.1.21
       '@standard-schema/spec': 1.1.0
 
+  '@betternotify/core@1.0.0-beta.11':
+    dependencies:
+      '@better-fetch/fetch': 1.1.21
+      '@standard-schema/spec': 1.1.0
+
   '@betternotify/email@1.0.0-beta.6':
     dependencies:
       '@betternotify/core': 1.0.0-beta.10
       '@standard-schema/spec': 1.1.0
 
-  '@betternotify/slack@1.0.0-beta.6':
+  '@betternotify/slack@1.0.0-beta.7':
     dependencies:
-      '@betternotify/core': 1.0.0-beta.10
+      '@betternotify/core': 1.0.0-beta.11
       '@standard-schema/spec': 1.1.0
       zod: 4.4.3
 

@@ -215,6 +215,56 @@ describe('config', () => {
     const config = parseConfig(configPath, schema, defaultsFromSchema(schema));
 
     expect(config.transports.slack?.thread).toBe(false);
+    expect(config.transports.slack?.unfurlLinks).toBeUndefined();
+    expect(config.transports.slack?.unfurlMedia).toBeUndefined();
+  });
+
+  it('accepts optional Slack unfurlLinks and unfurlMedia from config and CLI', async () => {
+    const configPath = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'run-and-notify-slack-unfurl-')),
+      'config.json',
+    );
+    fs.writeFileSync(
+      configPath,
+      `${JSON.stringify(
+        {
+          transports: {
+            smtp: {
+              enabled: false,
+              host: 'smtp.example.com',
+              port: 587,
+              from: 'bot@example.com',
+              to: ['ops@example.com'],
+            },
+            slack: {
+              enabled: true,
+              tokenEnvVar: 'SLACK_BOT_TOKEN',
+              unfurlLinks: true,
+              unfurlMedia: true,
+            },
+          },
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    );
+
+    const fromFile = parseConfig(configPath, schema, defaultsFromSchema(schema));
+    expect(fromFile.transports.slack?.unfurlLinks).toBe(true);
+    expect(fromFile.transports.slack?.unfurlMedia).toBe(true);
+
+    const parsed = await parseCli([
+      `--config=${configPath}`,
+      '--transports.slack.unfurl-links=false',
+      '--transports.slack.unfurl-media=false',
+      '--',
+      'node',
+      '-v',
+    ]);
+    expectParsed(parsed);
+    expect(parsed.config.transports.slack?.unfurlLinks).toBe(false);
+    expect(parsed.config.transports.slack?.unfurlMedia).toBe(false);
   });
 
   it('normalizes multiple CLI overrides for cc and bcc to arrays of strings', async () => {

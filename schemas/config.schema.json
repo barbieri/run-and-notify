@@ -209,6 +209,14 @@
               "type": "boolean",
               "description": "Whether to send subsequent notifications in a thread under the first notification.",
               "default": false
+            },
+            "unfurlLinks": {
+              "type": "boolean",
+              "description": "Optional chat.postMessage unfurl_links flag. When set, forwarded to @betternotify/slack on every Slack payload. Set false with unfurlMedia false to disable classic link previews."
+            },
+            "unfurlMedia": {
+              "type": "boolean",
+              "description": "Optional chat.postMessage unfurl_media flag. When set, forwarded to @betternotify/slack on every Slack payload. Set false with unfurlLinks false to disable classic media previews."
             }
           },
           "required": ["enabled", "tokenEnvVar"]

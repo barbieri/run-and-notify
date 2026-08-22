@@ -31,7 +31,9 @@
       "enabled": true,
       "tokenEnvVar": "SLACK_BOT_TOKEN",
       "defaultChannel": "#ops",
-      "thread": false
+      "thread": false,
+      "unfurlLinks": false,
+      "unfurlMedia": false
     }
   },
   "success": {

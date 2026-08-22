@@ -54,7 +54,7 @@
   "devDependencies": {
     "@betternotify/core": "1.0.0-beta.10",
     "@betternotify/email": "1.0.0-beta.6",
-    "@betternotify/slack": "1.0.0-beta.6",
+    "@betternotify/slack": "1.0.0-beta.7",
     "@betternotify/smtp": "1.0.0-beta.5",
     "@biomejs/biome": "^2.5.2",
     "@tsconfig/strictest": "^2.0.8",

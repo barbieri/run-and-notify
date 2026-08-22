@@ -40,6 +40,8 @@ export type SlackConfig = {
   tokenEnvVar: string;
   defaultChannel?: string;
   thread: boolean;
+  unfurlLinks?: boolean;
+  unfurlMedia?: boolean;
 };
 
 export type RunAndNotifyConfig = {
@@ -131,6 +133,8 @@ export type SlackPayload = {
   blocks?: unknown[];
   to?: string;
   threadTs?: string;
+  unfurlLinks?: boolean;
+  unfurlMedia?: boolean;
 };
 
 export type DeliveryPayload =
