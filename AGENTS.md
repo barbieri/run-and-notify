@@ -28,7 +28,7 @@ Before finishing a task that changes config behavior, check that [README.md](./R
 - **TypeScript** `tsconfig.json` extends `@tsconfig/strictest` with `"types": ["node"]`
 - **pnpm** via Corepack (`packageManager` pins the version)
 - **Biome** — formatting and lint (`biome.json`: JavaScript/TypeScript **single quotes**)
-- **Vitest** — run `pnpm run test`; currently pinned to 3.2.x to avoid the Vitest 4/Rolldown native binding path on macOS. Runtime source coverage is enforced at 100% statements/branches/functions/lines.
+- **Vitest** — run `pnpm run test`. Runtime source coverage is enforced at 100% statements/branches/functions/lines.
 - **Pino** — used for structured CLI logs, including dry-run payload inspection.
 - Tests mock `src/logger.ts` globally through `tests/setup-env.ts`; warn/error/fatal log calls are part of the tested contract when functions emit them.
 
