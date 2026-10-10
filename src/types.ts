@@ -38,6 +38,7 @@ export type SmtpConfig = {
 export type SlackConfig = {
   enabled: boolean;
   tokenEnvVar: string;
+  targets?: string[];
   defaultChannel?: string;
   thread: boolean;
   unfurlLinks?: boolean;

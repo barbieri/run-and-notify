@@ -67,8 +67,9 @@ The SMTP email delivery instance is scoped internally as `emailSmtp`/`email-smtp
 
 - `enabled`: enables Slack delivery through `@betternotify/slack`.
 - `tokenEnvVar`: environment variable containing the Slack bot token passed to `slackTransport()`.
-- `defaultChannel`: optional Slack channel ID or name used when the rendered payload does not set `to`.
-- `thread`: when `true`, subsequent notifications are sent as replies inside a dedicated thread under the first notification. Defaults to `false`.
+- `targets`: optional nonempty array of unique Slack channel IDs, names, conversation IDs, or user IDs. User IDs (`U...` or `W...`) are opened as direct messages before sending. The notification is rendered and split into blocks once, then the same message batch is sent to each target. A failure for one target does not prevent attempts to later targets, but the command fails if any target fails. When set, `targets` takes precedence over `defaultChannel`. CLI overrides accept repeated `--transports.slack.targets=ID` options.
+- `defaultChannel`: legacy single Slack channel ID or name, used when `targets` is omitted.
+- `thread`: when `true`, each target receives its own parent message, followed by replies inside that target's thread. Defaults to `false`.
 - `unfurlLinks`: optional boolean forwarded as Slack `unfurl_links` on every Slack payload. Omit to keep Slack's default; set `false` (typically with `unfurlMedia: false`) to disable classic text-link previews.
 - `unfurlMedia`: optional boolean forwarded as Slack `unfurl_media` on every Slack payload. Omit to keep Slack's default; set `false` (typically with `unfurlLinks: false`) to disable classic media previews.
 

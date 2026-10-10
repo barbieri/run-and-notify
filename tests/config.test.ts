@@ -219,6 +219,36 @@ describe('config', () => {
     expect(config.transports.slack?.unfurlMedia).toBeUndefined();
   });
 
+  it('accepts a nonempty Slack target list from config and repeated CLI overrides', async () => {
+    const parsed = await parseCli([
+      '--config=config.example.json',
+      '--transports.slack.targets=#manager',
+      '--transports.slack.targets=#leader',
+      '--',
+      'node',
+      '-v',
+    ]);
+    expectParsed(parsed);
+    expect(parsed.config.transports.slack?.targets).toEqual(['#manager', '#leader']);
+
+    const configPath = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'run-and-notify-slack-targets-')),
+      'config.json',
+    );
+    fs.writeFileSync(
+      configPath,
+      `${JSON.stringify({
+        transports: {
+          slack: { enabled: true, tokenEnvVar: 'SLACK_BOT_TOKEN', targets: [] },
+        },
+      })}\n`,
+      'utf8',
+    );
+    expect(() => parseConfig(configPath, schema, defaultsFromSchema(schema))).toThrow(
+      '/transports/slack/targets must NOT have fewer than 1 items',
+    );
+  });
+
   it('accepts optional Slack unfurlLinks and unfurlMedia from config and CLI', async () => {
     const configPath = path.join(
       fs.mkdtempSync(path.join(os.tmpdir(), 'run-and-notify-slack-unfurl-')),

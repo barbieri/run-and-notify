@@ -2,6 +2,7 @@ import { mockTransport as mockEmailTransport } from '@betternotify/email';
 import { mockSlackTransport } from '@betternotify/slack';
 import * as markdownToSlackBlocks from 'markdown-to-slack-blocks';
 import { describe, expect, it, vi } from 'vitest';
+import { sendDeliveryPayloads } from '../src/delivery/send.js';
 import {
   createDefaultTransports,
   createDeliveryPayloads,
@@ -298,6 +299,149 @@ describe('delivery', () => {
       blocks: expect.arrayContaining([{ type: 'divider' }]),
       threadTs: '12345.67890',
     });
+  });
+
+  it('renders one block batch and sends it to every configured Slack target', async () => {
+    const splitSpy = vi.spyOn(markdownToSlackBlocks, 'splitBlocksWithText');
+    try {
+      const payloads = await createDeliveryPayloads({
+        ...context,
+        config: {
+          ...config,
+          transports: {
+            ...config.transports,
+            slack: { ...slackConfig, targets: ['#manager', '#leader'] },
+          },
+        },
+      });
+
+      expect(splitSpy).toHaveBeenCalledTimes(1);
+      expect(payloads).toHaveLength(3);
+      expect(payloads[1]).toMatchObject({ channel: 'slack', payload: { to: '#manager' } });
+      expect(payloads[2]).toMatchObject({ channel: 'slack', payload: { to: '#leader' } });
+      const first = payloads[1];
+      const second = payloads[2];
+      if (first?.channel !== 'slack' || second?.channel !== 'slack') {
+        throw new Error('expected Slack payloads');
+      }
+      expect(first.payload).toMatchObject({ text: 'run-and-notify', blocks: expect.any(Array) });
+      expect(second.payload).toMatchObject({
+        text: first.payload.text,
+        blocks: first.payload.blocks,
+      });
+    } finally {
+      splitSpy.mockRestore();
+    }
+  });
+
+  it('keeps separate Slack threads for each configured target', async () => {
+    const messagesSent: SlackPayload[] = [];
+    const mockSlack: TransportLike = {
+      send: vi.fn().mockImplementation(async (payload: SlackPayload) => {
+        messagesSent.push({ ...payload });
+        return { ok: true, data: { ts: `${payload.to}-parent` } };
+      }),
+    };
+    await deliverNotifications(
+      {
+        ...context,
+        config: {
+          ...config,
+          transports: {
+            ...config.transports,
+            slack: {
+              ...slackConfig,
+              targets: ['#manager', '#leader'],
+              thread: true,
+            },
+          },
+        },
+      },
+      { emailSmtp: mockEmailTransport(), slack: mockSlack },
+    );
+
+    expect(messagesSent).toHaveLength(4);
+    expect(messagesSent[0]).toEqual({ to: '#manager', text: 'run-and-notify' });
+    expect(messagesSent[1]).toMatchObject({ to: '#manager', threadTs: '#manager-parent' });
+    expect(messagesSent[2]).toEqual({ to: '#leader', text: 'run-and-notify' });
+    expect(messagesSent[3]).toMatchObject({ to: '#leader', threadTs: '#leader-parent' });
+  });
+
+  it('continues to later Slack targets when one target fails', async () => {
+    const messagesSent: SlackPayload[] = [];
+    const mockSlack: TransportLike = {
+      send: vi.fn().mockImplementation(async (payload: SlackPayload) => {
+        messagesSent.push({ ...payload });
+        if (payload.to === '#manager') return { ok: false, error: new Error('not_in_channel') };
+        return { ok: true, data: { ts: '#leader-parent' } };
+      }),
+    };
+    await expect(
+      deliverNotifications(
+        {
+          ...context,
+          config: {
+            ...config,
+            transports: {
+              ...config.transports,
+              slack: { ...slackConfig, targets: ['#manager', '#leader'], thread: true },
+            },
+          },
+        },
+        { emailSmtp: mockEmailTransport(), slack: mockSlack },
+      ),
+    ).rejects.toThrow('Slack delivery failed for 1 target(s)');
+    expect(messagesSent).toHaveLength(3);
+    expect(messagesSent[0]).toEqual({ to: '#manager', text: 'run-and-notify' });
+    expect(messagesSent[1]).toEqual({ to: '#leader', text: 'run-and-notify' });
+    expect(messagesSent[2]).toMatchObject({ to: '#leader', threadTs: '#leader-parent' });
+  });
+
+  it('leaves replies unthreaded when Slack does not return a parent timestamp', async () => {
+    const messagesSent: SlackPayload[] = [];
+    const mockSlack: TransportLike = {
+      send: vi.fn().mockImplementation(async (payload: SlackPayload) => {
+        messagesSent.push({ ...payload });
+        return messagesSent.length === 1 ? { ok: true } : {};
+      }),
+    };
+    await deliverNotifications(
+      {
+        ...context,
+        config: {
+          ...config,
+          transports: {
+            ...config.transports,
+            slack: { enabled: true, tokenEnvVar: 'SLACK_BOT_TOKEN', thread: true },
+          },
+        },
+      },
+      { emailSmtp: mockEmailTransport(), slack: mockSlack },
+    );
+    expect(messagesSent).toHaveLength(2);
+    expect(messagesSent[1]).not.toHaveProperty('threadTs');
+  });
+
+  it('uses the transport default when threading a payload without an explicit target', async () => {
+    const messagesSent: SlackPayload[] = [];
+    const mockSlack: TransportLike = {
+      send: vi.fn().mockImplementation(async (payload: SlackPayload) => {
+        messagesSent.push({ ...payload });
+        return { ok: true, data: { ts: 'parent-ts' } };
+      }),
+    };
+    await sendDeliveryPayloads(
+      [
+        { channel: 'slack', payload: { text: 'parent' } },
+        { channel: 'slack', payload: { text: 'reply' } },
+      ],
+      {
+        ...context,
+        config: { ...config, transports: { slack: { ...slackConfig, thread: true } } },
+      },
+      { slack: mockSlack },
+    );
+    expect(messagesSent[1]).toEqual({ text: 'reply', threadTs: 'parent-ts' });
   });
 
   it('forwards Slack unfurlLinks and unfurlMedia onto every payload when configured', async () => {
@@ -650,6 +794,84 @@ describe('delivery', () => {
         thread: false,
       }),
     ).toEqual(expect.objectContaining({ send: expect.any(Function) }));
+  });
+
+  it('opens Slack user targets as DMs once before sending message batches', async () => {
+    env.SLACK_BOT_TOKEN = 'xoxb-token';
+    const requests: Array<{ url: string; body: string }> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (request: Request | URL | string, init?: RequestInit) => {
+        const url =
+          request instanceof URL
+            ? request.href
+            : typeof request === 'string'
+              ? request
+              : request.url;
+        const body = init?.body ?? (request instanceof Request ? await request.text() : '');
+        requests.push({ url, body: String(body) });
+        return Response.json(
+          url.endsWith('/conversations.open')
+            ? { ok: true, channel: { id: 'D456' } }
+            : { ok: true, ts: '123.456', channel: 'D456' },
+        );
+      }),
+    );
+    try {
+      const transport = createSlackTransport({
+        enabled: true,
+        tokenEnvVar: 'SLACK_BOT_TOKEN',
+        thread: true,
+      });
+      const sendContext = { route: 'run.success', channel: 'slack', input: context };
+      await transport.send({ to: 'U123', text: 'parent' }, sendContext);
+      await transport.send({ to: 'U123', text: 'reply', threadTs: '123.456' }, sendContext);
+      await transport.send({ to: '#ops', text: 'channel' }, sendContext);
+
+      expect(requests.map(({ url }) => url)).toEqual([
+        'https://slack.com/api/conversations.open',
+        'https://slack.com/api/chat.postMessage',
+        'https://slack.com/api/chat.postMessage',
+        'https://slack.com/api/chat.postMessage',
+      ]);
+      expect(requests[0]?.body).toBe('users=U123');
+      expect(JSON.parse(requests[1]?.body ?? '')).toMatchObject({
+        channel: 'D456',
+        text: 'parent',
+      });
+      expect(JSON.parse(requests[2]?.body ?? '')).toMatchObject({
+        channel: 'D456',
+        text: 'reply',
+        thread_ts: '123.456',
+      });
+      expect(JSON.parse(requests[3]?.body ?? '')).toMatchObject({
+        channel: '#ops',
+        text: 'channel',
+      });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('reports a Slack DM opening failure before posting to a user', async () => {
+    env.SLACK_BOT_TOKEN = 'xoxb-token';
+    const fetchMock = vi.fn(async () =>
+      Response.json({ ok: false, error: 'missing_scope' }, { status: 403 }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const transport = createSlackTransport({
+        enabled: true,
+        tokenEnvVar: 'SLACK_BOT_TOKEN',
+        thread: false,
+      });
+      await expect(
+        transport.send({ to: 'U999', text: 'private' }, { route: 'run.success' }),
+      ).rejects.toThrow('Slack conversations.open failed for user U999');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('throws when required env vars are missing', () => {

@@ -2,9 +2,13 @@ import { splitBlocksWithText } from 'markdown-to-slack-blocks';
 import type { DeliveryPayload, SlackConfig, SlackPayload, TemplateContext } from '../types.js';
 import { renderOptional } from './render.js';
 
-const applySlackDeliveryOptions = (payload: SlackPayload, slack: SlackConfig): SlackPayload => {
-  if (slack.defaultChannel !== undefined) {
-    payload.to = slack.defaultChannel;
+const applySlackDeliveryOptions = (
+  payload: SlackPayload,
+  slack: SlackConfig,
+  target: string | undefined,
+): SlackPayload => {
+  if (target !== undefined) {
+    payload.to = target;
   }
   if (slack.unfurlLinks !== undefined) {
     payload.unfurlLinks = slack.unfurlLinks;
@@ -29,14 +33,13 @@ export const createSlackPayloads = async (context: TemplateContext): Promise<Del
     (context.status === 0
       ? context.config.name
       : `Failed: ${context.config.name} (status ${context.status})`);
+  const targets: Array<string | undefined> = slack.targets ?? [slack.defaultChannel];
 
   if (renderedBlocks === undefined || renderedBlocks.trim() === '') {
-    return [
-      {
-        channel: 'slack',
-        payload: applySlackDeliveryOptions({ text: fallbackText }, slack),
-      },
-    ];
+    return targets.map((target) => ({
+      channel: 'slack',
+      payload: applySlackDeliveryOptions({ text: fallbackText }, slack, target),
+    }));
   }
 
   const parsed: unknown = JSON.parse(renderedBlocks);
@@ -45,32 +48,30 @@ export const createSlackPayloads = async (context: TemplateContext): Promise<Del
   }
 
   const batches = splitBlocksWithText(parsed);
-  if (slack.thread) {
-    const parent: DeliveryPayload = {
+  return targets.flatMap((target): DeliveryPayload[] => {
+    if (slack.thread) {
+      const parent: DeliveryPayload = {
+        channel: 'slack',
+        payload: applySlackDeliveryOptions({ text: fallbackText }, slack, target),
+      };
+      const replies: DeliveryPayload[] = batches.map((batch) => ({
+        channel: 'slack',
+        payload: applySlackDeliveryOptions(
+          { text: batch.text || fallbackText, blocks: batch.blocks },
+          slack,
+          target,
+        ),
+      }));
+      return [parent, ...replies];
+    }
+
+    return batches.map((batch, index) => ({
       channel: 'slack',
-      payload: applySlackDeliveryOptions({ text: fallbackText }, slack),
-    };
-    const replies = batches.map((batch) => ({
-      channel: 'slack' as const,
       payload: applySlackDeliveryOptions(
-        {
-          text: batch.text || fallbackText,
-          blocks: batch.blocks,
-        },
+        { text: index === 0 ? fallbackText : batch.text, blocks: batch.blocks },
         slack,
+        target,
       ),
     }));
-    return [parent, ...replies];
-  }
-
-  return batches.map((batch, index) => ({
-    channel: 'slack' as const,
-    payload: applySlackDeliveryOptions(
-      {
-        text: index === 0 ? fallbackText : batch.text,
-        blocks: batch.blocks,
-      },
-      slack,
-    ),
-  }));
+  });
 };

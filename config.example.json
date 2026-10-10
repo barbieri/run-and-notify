@@ -30,7 +30,7 @@
     "slack": {
       "enabled": true,
       "tokenEnvVar": "SLACK_BOT_TOKEN",
-      "defaultChannel": "#ops",
+      "targets": ["#ops", "#team-leads"],
       "thread": false,
       "unfurlLinks": false,
       "unfurlMedia": false

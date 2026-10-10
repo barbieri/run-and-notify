@@ -203,7 +203,17 @@
             },
             "defaultChannel": {
               "type": "string",
-              "description": "Default Slack channel ID or name used when Slack templates do not set a destination."
+              "description": "Legacy single Slack channel ID or name. Used when targets is omitted."
+            },
+            "targets": {
+              "type": "array",
+              "description": "Slack channel IDs, names, conversation IDs, or user IDs to receive the same rendered notification. User IDs are opened as DMs. Takes precedence over defaultChannel.",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
             },
             "thread": {
               "type": "boolean",
