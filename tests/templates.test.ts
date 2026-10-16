@@ -144,7 +144,7 @@ describe('template helpers', () => {
     expect(rendered).toContain('```\nraw <stdout>\n```');
     expect(rendered).toContain('debug');
     expect(rendered).toContain('info');
-    expect(rendered).toContain('#64748b');
+    expect(rendered).toContain('var(--text-muted)');
     expect(rendered).toContain('raw pino fallback');
     expect(rendered).toContain('slacrawl.listColumns');
     expect(rendered).toContain('abc');
@@ -274,7 +274,7 @@ describe('template helpers', () => {
       ),
     );
 
-    expect(rendered).toContain('border-left: 6px solid #ca8a04');
+    expect(rendered).toContain('border-left: 6px solid var(--warning)');
     expect(rendered).toContain('warn');
     expect(rendered).toContain('retrying job');
     expect(rendered).toContain('Jan 2, 2026');

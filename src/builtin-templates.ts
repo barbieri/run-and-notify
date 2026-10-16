@@ -21,6 +21,7 @@ export const templateSource = (filename: string): string => {
 
 export const builtinTemplates = Object.fromEntries(
   [
+    '_gustavo-style.hbs',
     '_output-html.hbs',
     '_output-text.hbs',
     'default.email.html.hbs',

@@ -6,6 +6,7 @@ import type { CommandResult, RunAndNotifyConfig } from './types.js';
 
 type RunCommandOptions = {
   env: NodeJS.ProcessEnv;
+  onStdout?: (chunk: string) => void;
 };
 
 export const runCommand = async (
@@ -45,6 +46,7 @@ export const runCommand = async (
   child.stdout.on('data', (chunk: string) => {
     childLogger.debug('stdout: %o', chunk);
     stdout += chunk;
+    options.onStdout?.(chunk);
   });
   child.stderr.on('data', (chunk: string) => {
     childLogger.debug('stderr: %o', chunk);

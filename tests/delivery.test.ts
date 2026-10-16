@@ -594,7 +594,7 @@ describe('delivery', () => {
     ]);
   });
 
-  it('renders failed email notifications with a dark red header', async () => {
+  it('renders failed email notifications with semantic error tokens', async () => {
     const payloads = await createDeliveryPayloads({
       ...context,
       status: 2,
@@ -605,7 +605,7 @@ describe('delivery', () => {
       payload: {
         subject: 'Failed: run-and-notify (status 2)',
         html: expect.stringMatching(
-          /background: #7f1d1d[\s\S]*<strong>Status:<\/strong> <code>2<\/code>/,
+          /background: var\(--error-bg\)[\s\S]*<strong>Status:<\/strong> <code>2<\/code>/,
         ),
       },
     });

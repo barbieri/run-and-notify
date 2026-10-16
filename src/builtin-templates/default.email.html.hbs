@@ -1,13 +1,14 @@
 <!doctype html>
 <html lang="en">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="color-scheme" content="light dark">{{> gustavo-style}}</head>
   <body>
-    <main style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #18212f; line-height: 1.5;">
-      <section style="border: 1px solid #d9e2ec; border-radius: 16px; overflow: hidden;">
+    <main style="color: var(--text); background: var(--surface); line-height: 1.5;">
+      <section style="border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
         {{#unless (hideCommandIfSuccess)}}
-        <header style="background: {{#if status}}#7f1d1d{{else}}#0f172a{{/if}}; color: #f8fafc; padding: 20px 24px;">
-          <h1 style="margin: 0; font-size: 22px;">{{#if status}}Failed: {{/if}}{{config.name}}</h1>
+        <header style="background: {{#if status}}var(--error-bg){{else}}var(--success-bg){{/if}}; color: {{#if status}}var(--error){{else}}var(--success){{/if}}; padding: 20px 24px;">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 500;"><svg class="material-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="{{#if status}}M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2zm0-4h-2V7h2z{{else}}M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8z{{/if}}"/></svg>{{#if status}}Failed: {{/if}}{{config.name}}</h1>
         </header>
-        <div style="padding: 20px 24px; background: #f8fafc;">
+        <div style="padding: 20px 24px; background: var(--surface-sunken);">
           <p><strong>Status:</strong> <code>{{status}}</code></p>
           <p><strong>Command:</strong> <code>{{shellCommand command}}</code></p>
           <p><strong>CWD:</strong> <code>{{shellToken cwd}}</code></p>
@@ -21,13 +22,13 @@
         </section>
     {{#if (hasOutput stderr)}}
       {{#if status}}
-        <section style="padding: 20px 24px; border-top: 1px solid #e2e8f0;">
+        <section style="padding: 20px 24px; border-top: 1px solid var(--border);">
           <h2 style="margin-top: 0;">Errors</h2>
           {{> output-html stderr}}
         </section>
       {{else}}
         {{#if config.showStderrIfSuccess}}
-          <section style="padding: 20px 24px; border-top: 1px solid #e2e8f0;">
+          <section style="padding: 20px 24px; border-top: 1px solid var(--border);">
             <h2 style="margin-top: 0;">Errors</h2>
             {{> output-html stderr}}
           </section>

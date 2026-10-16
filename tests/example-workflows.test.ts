@@ -65,9 +65,7 @@ describe('example workflow: minimal', () => {
     );
 
     expect(email.sent[0]?.subject).toBe('run-and-notify');
-    expect(email.sent[0]?.html).toContain(
-      '<h1 style="margin: 0; font-size: 22px;">run-and-notify</h1>',
-    );
+    expect(email.sent[0]?.html).toMatch(/<h1\b[^>]*>[\s\S]*?run-and-notify<\/h1>/);
     expect(slack.messages[0]?.blocks).toContainEqual({ type: 'divider' });
     expect(JSON.stringify(slack.messages[0]?.blocks)).toContain('rich_text_preformatted');
   });

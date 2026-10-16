@@ -28,7 +28,10 @@ export const main = async (argv = process.argv.slice(2)): Promise<number> => {
     return 1;
   }
 
-  const result = await runCommand(parsed.command, parsed.config, { env: childEnv });
+  const result = await runCommand(parsed.command, parsed.config, {
+    env: childEnv,
+    onStdout: process.stdout.write.bind(process.stdout),
+  });
   const context: TemplateContext = {
     config: parsed.config,
     stdout: result.stdout,
