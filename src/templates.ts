@@ -128,12 +128,12 @@ const pinoLevelNames: Record<number, string> = {
 };
 
 const pinoLevelColors: Record<string, string> = {
-  trace: '#64748b',
-  debug: '#2563eb',
-  info: '#16a34a',
-  warn: '#ca8a04',
-  error: '#dc2626',
-  fatal: '#9333ea',
+  trace: 'var(--text-muted)',
+  debug: 'var(--info)',
+  info: 'var(--success)',
+  warn: 'var(--warning)',
+  error: 'var(--error)',
+  fatal: 'var(--error)',
 };
 
 const pinoCoreFields = new Set([
@@ -165,7 +165,7 @@ const formatPinoLevelLabel = (level: unknown): string => {
 };
 
 const formatPinoLevelColor = (level: unknown): string =>
-  pinoLevelColors[formatPinoLevelLabel(level)] ?? '#64748b';
+  pinoLevelColors[formatPinoLevelLabel(level)] ?? 'var(--text-muted)';
 
 const formatPinoMessage = (line: PinoTemplateLine): string => {
   if (typeof line.msg === 'string') {

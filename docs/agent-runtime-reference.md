@@ -118,3 +118,12 @@ Use Pino structured logs with placeholders (`%s`, `%o`, etc.) and positional par
 When rendering command lines or cwd values in templates, use `shellCommand command` and `shellToken cwd`. Command arguments are space-delimited; values containing whitespace are wrapped in single quotes with embedded single quotes escaped for shell copy/paste.
 
 Use `slackCodeBlock` in Slack block templates whenever rendering command output or error bodies.
+
+## Report stream and visual theme
+
+The CLI forwards child stdout unchanged while capturing it for notifications.
+All Pino logs, including dry-run payload inspection, use stderr. Capture stdout
+for a report; do not mine notification payloads out of structured logs.
+Built-in email uses the generated Gustavo Style partial. See `design/README.md`
+for the canonical source and regeneration. Raw, Markdown, JSONL, and Pino output
+share the same explicit surfaces and light/dark tokens.
