@@ -41,10 +41,10 @@ Top-level fields:
 `stdout.format` and `stderr.format` accept:
 
 - `raw`: exposes `{ "format": "raw", "raw": "..." }`.
-- `jsonl`: parses each line as JSON and wraps invalid lines as `{ "raw": "..." }`.
+- `jsonl`: parses each line as JSON and wraps invalid lines as `{ "raw": "..." }`. Built-in templates recognize log records by `level`, `time` or `timestamp`, or `msg` or `message` and render them like Pino logs. Other records keep key/value formatting.
 - `markdown`: exposes `{ "format": "markdown", "markdown": "..." }`.
 - `html`: exposes `{ "format": "html", "html": "..." }`.
-- `pino`: parses each line as a Pino JSON log record and exposes valid objects unchanged in `lines`; invalid or non-object lines are wrapped as `{ "raw": "..." }`. Built-in templates derive display labels/colors from `level`, use `msg` as the main text, format `time` as a localized date and short time, and render non-core fields as an indented object.
+- `pino`: parses each line as a Pino JSON log record and exposes valid objects unchanged in `lines`; invalid or non-object lines are wrapped as `{ "raw": "..." }`. Built-in templates derive display labels and theme colors from numeric or string `level`, use `msg` or `message` as the main text, and format `time` or `timestamp` as a localized date and short time. Timestamps accept epoch milliseconds or ISO date strings. Extra fields and error stacks remain readable in HTML, Slack, and plain text. Invalid timestamps and unparseable lines remain visible.
 
 Only `jsonl` and `pino` expose `lines`. `raw`, `markdown`, and `html` preserve the full stream as a single string.
 
@@ -90,14 +90,14 @@ By default, `success` and `error` use built-in email and Slack templates. You ca
 
 Templates are loaded from `templatesDir` and may use partials from the same directory. If `templatesDir` is omitted, templates are loaded from built-ins imported into the bundled CLI. Built-in templates are registered first, so custom template directories may override any built-in by filename while still using built-in partials. The rendering context contains `config`, `stdout`, `stderr`, `status`, `command`, `cwd`, `timedOut`, `executedAt`, and `dryRun`.
 
-Built-in email templates render `raw` as escaped preformatted text, `markdown` as HTML, `html` as provided HTML, `jsonl` as itemized records, and `pino` as level-colored log cards with extra fields indented. Built-in Slack block templates render Markdown through `markdown-to-slack-blocks`, split large block batches before sending, separate execution context with a divider when command metadata is visible, render `raw` as preformatted rich text, render `markdown` as Slack blocks, convert `html` to Markdown first, render `jsonl` as nested itemized records, and render `pino` as level/msg bullets with indented Pino fields.
+Built-in email templates render `raw` as escaped preformatted text, `markdown` as HTML, `html` as provided HTML, `jsonl` log records and `pino` as level-colored log cards, with readable extra fields and multiline error stacks. Other JSONL records use itemized key/value cards. Built-in Slack block templates render Markdown through `markdown-to-slack-blocks`, split large block batches before sending, separate execution context with a divider when command metadata is visible, render `raw` as preformatted rich text, render `markdown` as Slack blocks, convert `html` to Markdown first, render JSONL log records and Pino as level/message bullets with indented fields, and keep other JSONL records as nested key/value lists. Plain text uses level labels without color codes. Parsed records remain unchanged for custom templates.
 
 Registered helpers:
 
 - `dateFromISO8601`, `timeFromISO8601`, `datetimeFromISO8601`, `datetimeFromUnixEpochMilliseconds`
 - `dateFromUnixEpoch`, `timeFromUnixEpoch`, `datetimeFromUnixEpoch`
 - `markdownToHtml`, `htmlToMarkdown`, `rawToHtml`
-- `escapeHtml`, `escapeMarkdown`, `json`, `jsonValue`, `jsonString`, `concat`, `outputToSlack`, `slackCodeBlock`, `hasOutput`, `hideCommandIfSuccess`
+- `escapeHtml`, `escapeMarkdown`, `json`, `jsonValue`, `jsonString`, `concat`, `outputToSlack`, `slackCodeBlock`, `hasOutput`, `hideCommandIfSuccess`, `structuredLines`
 - `shellCommand`, `shellToken`: formats command arrays and paths with space-delimited shell-friendly output, single-quoting values that contain whitespace.
 
 ## Environment
