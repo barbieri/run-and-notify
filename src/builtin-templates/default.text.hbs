@@ -9,7 +9,15 @@
 {{/unless}}
 {{> output-text stdout}}
 {{#if (hasOutput stderr)}}
+{{#if status}}
 
 ## Errors
 {{> output-text stderr}}
+{{else}}
+{{#if config.showStderrIfSuccess}}
+
+## Errors
+{{> output-text stderr}}
+{{/if}}
+{{/if}}
 {{/if}}
