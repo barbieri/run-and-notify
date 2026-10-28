@@ -47,7 +47,10 @@ const escapeHtml = (value: string): string =>
     .replace(/'/g, '&#39;');
 
 const escapeMarkdown = (value: string): string =>
-  value.replace(/([\\`*_{}[\]()#+\-.!|>])/g, '\\$1');
+  value.replace(
+    /https?:\/\/[^\s<>]+|([\\`*_{}[\]()#+\-.!|>])/g,
+    (match, punctuation: string | undefined) => (punctuation === undefined ? match : `\\${match}`),
+  );
 
 const asString = (value: unknown): string => {
   if (value === null || value === undefined) {
@@ -77,7 +80,12 @@ export const formatSlackCodeBlock = (value: unknown): string => {
       ? outputToText(value as Parameters<typeof outputToText>[0])
       : asString(value);
 
-  return `\`\`\`\n${content}\n\`\`\``;
+  let fenceLength = 3;
+  for (const match of content.matchAll(/`+/g)) {
+    fenceLength = Math.max(fenceLength, match[0].length + 1);
+  }
+  const fence = '`'.repeat(fenceLength);
+  return `${fence}\n${content}\n${fence}`;
 };
 
 const formatJsonValue = (value: unknown): string => {
@@ -87,36 +95,42 @@ const formatJsonValue = (value: unknown): string => {
   return JSON.stringify(value);
 };
 
-const formatJsonlLineForMarkdown = (line: Record<string, unknown>): string => {
-  const entries = Object.entries(line);
-  if (entries.length === 0) {
-    return '- message:';
+const formatFieldValue = (key: string, value: unknown): string => {
+  if (
+    value !== null &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    (key === 'err' || key === 'error' || 'stack' in value)
+  ) {
+    const entries = Object.entries(value);
+    if (entries.length > 0) {
+      return entries
+        .map(([field, child]) => `${field}: ${formatFieldValue(field, child)}`)
+        .join('\n');
+    }
   }
-  if (entries.length === 1) {
-    return `- ${escapeMarkdown(formatJsonValue(entries[0]?.[1]))}`;
-  }
-
-  const messageEntry = entries.find(([key]) => key === 'msg' || key === 'message');
-  const primaryEntry: [string, unknown] = messageEntry ?? ['message', ''];
-  const childEntries =
-    messageEntry === undefined ? entries : entries.filter(([key]) => key !== primaryEntry[0]);
-
-  return [
-    `- **${escapeMarkdown(primaryEntry[0])}:** ${escapeMarkdown(formatJsonValue(primaryEntry[1]))}`,
-    ...childEntries.map(
-      ([key, value]) => `  - **${escapeMarkdown(key)}:** ${escapeMarkdown(formatJsonValue(value))}`,
-    ),
-  ].join('\n');
+  return formatJsonValue(value);
 };
 
 const formatDate = (value: Date, locale: string, options: Intl.DateTimeFormatOptions): string =>
   new Intl.DateTimeFormat(locale, options).format(value);
 
-const formatUnixEpochMilliseconds = (value: unknown, locale: string): string =>
-  formatDate(new Date(Number(value)), locale, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+const formatUnixEpochMilliseconds = (value: unknown, locale: string): string => {
+  if (typeof value !== 'number' && typeof value !== 'string') {
+    return formatJsonValue(value);
+  }
+  const input = value;
+  const date = new Date(
+    typeof input === 'string' && input.trim() !== '' && Number.isFinite(Number(input))
+      ? Number(input)
+      : input,
+  );
+  return Number.isNaN(date.getTime())
+    ? typeof value === 'string' && value.trim() === ''
+      ? JSON.stringify(value)
+      : formatJsonValue(value)
+    : formatDate(date, locale, { dateStyle: 'medium', timeStyle: 'short' });
+};
 
 const pinoLevelNames: Record<number, string> = {
   10: 'trace',
@@ -127,93 +141,130 @@ const pinoLevelNames: Record<number, string> = {
   60: 'fatal',
 };
 
-const pinoLevelColors: Record<string, string> = {
-  trace: 'var(--text-muted)',
-  debug: 'var(--info)',
-  info: 'var(--success)',
-  warn: 'var(--warning)',
-  error: 'var(--error)',
-  fatal: 'var(--error)',
-};
-
-const pinoCoreFields = new Set([
-  'level',
-  'time',
-  'timestamp',
-  'pid',
-  'hostname',
-  'name',
-  'msg',
-  'v',
+const pinoLevelColors = new Map([
+  ['trace', 'var(--text-muted)'],
+  ['debug', 'var(--info)'],
+  ['info', 'var(--success)'],
+  ['warn', 'var(--warning)'],
+  ['error', 'var(--error)'],
+  ['fatal', 'var(--error)'],
 ]);
-
-type PinoTemplateLine = Record<string, unknown> & {
-  msg?: unknown;
-  raw?: unknown;
-  time?: unknown;
-  timestamp?: unknown;
-};
 
 const formatPinoLevelLabel = (level: unknown): string => {
   if (typeof level === 'number') {
     return pinoLevelNames[level] ?? `level ${level}`;
   }
   if (typeof level === 'string' && level.length > 0) {
-    return level.toLowerCase();
+    const label = pinoLevelNames[Number(level)] ?? level.toLowerCase();
+    return label === 'warning' ? 'warn' : label;
   }
   return 'info';
 };
 
 const formatPinoLevelColor = (level: unknown): string =>
-  pinoLevelColors[formatPinoLevelLabel(level)] ?? 'var(--text-muted)';
+  pinoLevelColors.get(formatPinoLevelLabel(level)) ?? 'var(--text-muted)';
 
-const formatPinoMessage = (line: PinoTemplateLine): string => {
-  if (typeof line.msg === 'string') {
-    return line.msg;
-  }
-  if (typeof line.raw === 'string') {
-    return line.raw;
-  }
-  return '';
+type StructuredRecord = Record<string, unknown> & {
+  level?: unknown;
+  time?: unknown;
+  timestamp?: unknown;
 };
 
-const pinoTimeValue = (line: PinoTemplateLine): unknown => line.time ?? line.timestamp;
+const primaryMessageKey = (line: Record<string, unknown>): string | undefined =>
+  ['msg', 'message', 'raw'].find((key) => line[key] !== undefined && line[key] !== null);
 
-const pinoExtraFields = (line: Record<string, unknown>): Record<string, unknown> =>
-  Object.fromEntries(Object.entries(line).filter(([key]) => !pinoCoreFields.has(key)));
+const primaryTimeKey = (line: Record<string, unknown>): string | undefined =>
+  ['time', 'timestamp'].find((key) => line[key] !== undefined && line[key] !== null);
 
-const formatPinoLineForMarkdown = (
-  line: ParsedOutput & { format: 'pino' },
+const formatPinoMessage = (line: Record<string, unknown>): string => {
+  const key = primaryMessageKey(line);
+  return key === undefined ? '' : formatFieldValue(key, line[key]);
+};
+
+const pinoTimeValue = (line: StructuredRecord): unknown => line.time ?? line.timestamp;
+
+const pinoExtraFields = (line: StructuredRecord): Record<string, unknown> => {
+  const consumed = new Set([primaryMessageKey(line), primaryTimeKey(line)]);
+  if (typeof line.level === 'number' || typeof line.level === 'string') {
+    consumed.add('level');
+  }
+  return Object.fromEntries(Object.entries(line).filter(([key]) => !consumed.has(key)));
+};
+
+type StructuredField = { key: string; value: string };
+type StructuredLine = {
+  isLog: boolean;
+  levelLabel: string;
+  levelColor: string;
+  message: string;
+  timestamp?: StructuredField;
+  fields: StructuredField[];
+};
+
+const structuredLine = (
+  line: StructuredRecord,
+  format: 'jsonl' | 'pino',
   locale: string,
-): string =>
-  line.lines
-    .map((pinoLine) => {
-      const time = pinoTimeValue(pinoLine);
-      const heading = [
-        `- **${escapeMarkdown(formatPinoLevelLabel(pinoLine.level).toUpperCase())}:** ${escapeMarkdown(formatPinoMessage(pinoLine))}`,
-      ];
-      if (time !== undefined) {
-        heading.push(`  - **time:** ${escapeMarkdown(formatUnixEpochMilliseconds(time, locale))}`);
-      }
-      if (pinoLine.pid !== undefined) {
-        heading.push(`  - **pid:** ${escapeMarkdown(formatJsonValue(pinoLine.pid))}`);
-      }
-      if (pinoLine.hostname !== undefined) {
-        heading.push(`  - **hostname:** ${escapeMarkdown(formatJsonValue(pinoLine.hostname))}`);
-      }
-      const fieldEntries = Object.entries(pinoExtraFields(pinoLine));
-      if (fieldEntries.length > 0) {
-        heading.push(
-          '  - **fields:**',
-          ...fieldEntries.map(
-            ([key, value]) =>
-              `    - **${escapeMarkdown(key)}:** ${escapeMarkdown(formatJsonValue(value))}`,
-          ),
-        );
-      }
-      return heading.join('\n');
-    })
-    .join('\n');
+): StructuredLine => {
+  const isLog =
+    format === 'pino' ||
+    typeof line.level === 'number' ||
+    typeof line.level === 'string' ||
+    ['time', 'timestamp', 'msg', 'message'].some((key) => Object.hasOwn(line, key));
+  const timeKey = isLog ? primaryTimeKey(line) : undefined;
+  const fields = isLog ? pinoExtraFields(line) : line;
+  return {
+    isLog,
+    levelLabel: formatPinoLevelLabel(line.level),
+    levelColor: formatPinoLevelColor(line.level),
+    message: isLog ? formatPinoMessage(line) : '',
+    ...(timeKey === undefined
+      ? {}
+      : {
+          timestamp: {
+            key: timeKey,
+            value: formatUnixEpochMilliseconds(line[timeKey], locale),
+          },
+        }),
+    fields: Object.entries(fields).map(([key, value]) => ({
+      key,
+      value: formatFieldValue(key, value),
+    })),
+  };
+};
+
+const markdownFields = (fields: StructuredField[], indent: string): string[] => [
+  ...fields
+    .filter(({ value }) => !value.includes('\n'))
+    .map(({ key, value }) => `${indent}- **${escapeMarkdown(key)}:** ${escapeMarkdown(value)}`),
+  ...fields
+    .filter(({ value }) => value.includes('\n'))
+    .map(({ key, value }) => `\n**${escapeMarkdown(key)}:**\n\n${formatSlackCodeBlock(value)}\n`),
+];
+
+const formatJsonlFieldsForMarkdown = (fields: StructuredField[]): string => {
+  if (fields.length === 0) {
+    return '- {}';
+  }
+  return fields.length === 1
+    ? markdownFields(fields, '').join('\n')
+    : ['- **record:**', ...markdownFields(fields, '  ')].join('\n');
+};
+
+const formatStructuredLineForMarkdown = (line: StructuredLine): string => {
+  const heading = [
+    `- **${escapeMarkdown(line.levelLabel.toUpperCase())}:** ${escapeMarkdown(line.message)}`,
+  ];
+  if (line.timestamp !== undefined) {
+    heading.push(
+      `  - **${escapeMarkdown(line.timestamp.key)}:** ${escapeMarkdown(line.timestamp.value)}`,
+    );
+  }
+  if (line.fields.length > 0) {
+    heading.push('  - **fields:**', ...markdownFields(line.fields, '    '));
+  }
+  return heading.join('\n');
+};
 
 const outputToSlackMarkdown = (output: ParsedOutput, locale = 'en-US'): string => {
   if (output.format === 'raw') {
@@ -225,11 +276,14 @@ const outputToSlackMarkdown = (output: ParsedOutput, locale = 'en-US'): string =
   if (output.format === 'html') {
     return turndown.turndown(output.html);
   }
-  if (output.format === 'pino') {
-    return formatPinoLineForMarkdown(output, locale);
-  }
-
-  return output.lines.map(formatJsonlLineForMarkdown).join('\n');
+  return output.lines
+    .map((line) => {
+      const display = structuredLine(line, output.format, locale);
+      return display.isLog
+        ? formatStructuredLineForMarkdown(display)
+        : formatJsonlFieldsForMarkdown(display.fields);
+    })
+    .join('\n');
 };
 
 const shouldHideCommandOnSuccess = (context: TemplateContext): boolean =>
@@ -377,17 +431,30 @@ const registerHelpers = (instance: typeof Handlebars): typeof Handlebars => {
   instance.registerHelper('pinoLevelColor', (value: unknown) => formatPinoLevelColor(value));
   instance.registerHelper('pinoLevelLabel', (value: unknown) => formatPinoLevelLabel(value));
   instance.registerHelper('pinoMessage', (value: unknown) =>
-    value !== null && typeof value === 'object' ? formatPinoMessage(value as PinoTemplateLine) : '',
+    value !== null && typeof value === 'object'
+      ? formatPinoMessage(value as Record<string, unknown>)
+      : '',
   );
   instance.registerHelper('pinoTime', (value: unknown) =>
     value !== null && typeof value === 'object'
-      ? pinoTimeValue(value as PinoTemplateLine)
+      ? pinoTimeValue(value as Record<string, unknown>)
       : undefined,
   );
   instance.registerHelper('pinoFields', (value: unknown) =>
     value !== null && typeof value === 'object'
       ? pinoExtraFields(value as Record<string, unknown>)
       : {},
+  );
+  instance.registerHelper(
+    'structuredLines',
+    function (this: unknown, output: ParsedOutput, options) {
+      if (output.format !== 'jsonl' && output.format !== 'pino') {
+        return [];
+      }
+      return output.lines.map((line) =>
+        structuredLine(line, output.format, getLocale(this, options)),
+      );
+    },
   );
   instance.registerHelper('shellToken', (value: unknown) => formatShellToken(value));
   instance.registerHelper('shellCommand', (value: unknown) => formatShellCommand(value));
