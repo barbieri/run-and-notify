@@ -9,8 +9,8 @@ Consult this reference when changing command behavior, formats, templates, confi
 If the process succeeds, then we'll use the `success` object to determine the templates for each channel. If it fails (non-zero output), it will use `error`, which also lists the templates for each channel.
 
 The command execution captures stdout and stderr as complete strings, then parses them by format. Optionally it understands and parses the following formats for both `--stdout.format` and `--stderr.format` (both defaults to `raw`):
-- `jsonl`: json lines, each line will be parsed to JSON, if it fails then a line in the shape: `{"raw": "<LINE HERE>"}` is created. The template object will be: `{"lines": [{"someKey": "parsed line here"}, {"raw": {"unparsed line"}}]}`
-- `pino`: json lines with Pino log fields. Each valid object is exposed unchanged under `lines`; invalid or non-object lines are wrapped as `{"raw": "<LINE HERE>"}`. Built-in templates derive display labels/colors from `level`, use `msg` as the main text, format `time` as a localized date and short time, and render non-core fields as an indented object.
+- `jsonl`: parses each JSON line into `lines`; invalid lines become `{"raw": "<LINE HERE>"}`. Built-in renderers identify log-shaped records by `level`, `time` or `timestamp`, or `msg` or `message`. They use the same log display as Pino, while other records keep key/value formatting. Parsed records remain unchanged for custom templates.
+- `pino`: json lines with Pino log fields. Each valid object is exposed unchanged under `lines`; invalid or non-object lines are wrapped as `{"raw": "<LINE HERE>"}`. Built-in templates derive labels and CSS-variable colors from numeric or string `level`, use `msg` or `message` as the primary text, and format `time` or `timestamp` as a localized date and short time. Timestamps accept epoch milliseconds or ISO strings. Extra fields, raw fallback lines, invalid timestamps, and multiline error stacks remain visible in HTML, Slack, and plain text.
 - `markdown`: the whole output is converted into a single `{"markdown": "all lines concatenated"}`
 - `html`: the whole output is converted into a single `{"html": "all lines concatenated"}`
 - `raw`: the whole output is converted into a single `{"raw": "all lines concatenated"}`
@@ -32,7 +32,7 @@ The configuration file defines values to be used by default, they can be overrid
 CLI overrides are prevalidated against yargs' registered option table from `getOptions()` before yargs parses them; unknown nested keys such as `--stdout.does-not-exist` must fail with `Unknown argument: stdout.does-not-exist`.
 
 The repository must always provide configurations for different formats, in order to simplify the examples assume both stderr and stdout use the same format:
-- `jsonl`: use a template that nicely formats to markdown as a list. If more than one key in the object, then add the field name in bold followed by `:` and then the value, with sub bullets for the each key.
+- `jsonl`: render log-shaped records with a level label, timestamp, message, and extra fields. Render other records as key/value lists. Preserve raw fallback lines and nested error stacks.
 - `markdown`: convert to HTML.
 - `html`: convert to Markdown.
 - `raw`: convert to HTML.
@@ -46,7 +46,9 @@ The templates are always referenced as filenames, which are dynamically loaded b
 
 Template rendering first registers built-in Handlebars templates from `src/builtin-templates.ts`, then overlays files from `templatesDir` when configured; all `.hbs` files in that directory are registered as partials by basename, and underscore-prefixed partials are also registered without the underscore.
 
-Built-in output templates are format-aware: email renders `raw` as escaped `<pre>`, `markdown` as HTML, `html` as provided HTML, `jsonl` as itemized records, and `pino` as level-colored log cards; Slack renders Markdown through `markdown-to-slack-blocks`, splits large block batches, separates execution context with a divider, renders `raw` as preformatted rich text, `markdown` as Slack blocks, `html` converted to markdown, `jsonl` as nested itemized records, and `pino` as level/msg bullets with indented fields.
+Built-in output templates are format-aware: email renders `raw` as escaped `<pre>`, `markdown` as HTML, `html` as provided HTML, JSONL log records and `pino` as level-colored log cards with multiline field values, and other JSONL records as itemized cards; Slack renders Markdown through `markdown-to-slack-blocks`, splits large block batches, separates execution context with a divider, renders `raw` as preformatted rich text, `markdown` as Slack blocks, `html` converted to markdown, JSONL log records and `pino` as level/message bullets with indented fields and multiline error stacks, and other JSONL records as nested key/value lists. Plain text preserves level labels and field values without HTML escaping or color codes.
+
+`structuredLines` derives display records for built-in HTML and text templates without mutating parsed lines. Each view exposes `isLog`, `levelLabel`, `levelColor`, `message`, optional `timestamp` with `key` and `value`, and `fields` as key/value pairs. Slack uses the same display normalization. Slack code fences use more backticks than any run in their content, so embedded fences remain literal and cannot hide subsequent records. Multiline Slack fields use top-level fenced blocks because `markdown-to-slack-blocks` discards fences nested under list items. Markdown escaping preserves automatic URLs so their punctuation remains intact.
 
 Built-in templates live as maintainable `.hbs` files under `src/builtin-templates/` and are imported by `src/builtin-templates.ts` with `with { type: "text" }`; esbuild must keep `.hbs` configured with the `text` loader, and development/test code keeps a filesystem fallback for those files.
 

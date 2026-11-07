@@ -100,6 +100,7 @@ describe('template helpers', () => {
         '{{datetimeFromUnixEpochMilliseconds (pinoTime timestampPinoLine)}}',
         '{{pinoTime "not-object"}}',
         '{{json (pinoFields timestampPinoLine)}}',
+        '{{{jsonValue timestampPinoLine}}}',
         '{{json (pinoFields missing)}}',
         '{{json (pinoFields "not-object")}}',
         '{{outputToSlack stdout}}',
@@ -147,6 +148,9 @@ describe('template helpers', () => {
     expect(rendered).toContain('var(--text-muted)');
     expect(rendered).toContain('raw pino fallback');
     expect(rendered).toContain('slacrawl.listColumns');
+    expect(rendered).toContain(
+      '{"timestamp":1767357296000,"operation":"slacrawl.listColumns","msg":"query completed"}',
+    );
     expect(rendered).toContain('abc');
     expect(rendered).toContain('partial: ok');
   });
@@ -162,6 +166,8 @@ describe('template helpers', () => {
 
   it('formats Slack code blocks from strings and parsed output objects', () => {
     expect(formatSlackCodeBlock('hello')).toBe('```\nhello\n```');
+    const largeOutput = '` '.repeat(150_000);
+    expect(formatSlackCodeBlock(largeOutput)).toBe(`\`\`\`\n${largeOutput}\n\`\`\``);
     expect(formatSlackCodeBlock(parseOutput('{"msg":"hello"}', { format: 'jsonl' }))).toBe(
       '```\n{"msg": "hello"}\n```',
     );
@@ -498,7 +504,7 @@ describe('template helpers', () => {
     expect(renderedJson).not.toContain('rich_text_preformatted');
   });
 
-  it('renders default Slack JSONL output with single-field and nested multi-field records', async () => {
+  it('renders default Slack JSONL logs alongside raw and empty records', async () => {
     const handlebars = await createHandlebars(undefined);
     const rendered = await renderTemplateFile(
       handlebars,
@@ -522,10 +528,11 @@ describe('template helpers', () => {
     }>;
     const renderedJson = JSON.stringify(blocks);
 
-    expect(renderedJson).toContain('msg:');
+    expect(renderedJson).toContain('ERROR:');
+    expect(renderedJson).toContain('WARN:');
     expect(renderedJson).toContain('report failed');
     expect(renderedJson).toContain('not-json stderr fallback');
-    expect(renderedJson).toContain('message:');
+    expect(renderedJson).toContain('{}');
     expect(renderedJson).toContain('DIGEST_RETRY');
     expect(renderedJson).toContain('"indent":1');
   });
