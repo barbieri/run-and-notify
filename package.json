@@ -20,9 +20,9 @@
   ],
   "engines": {
     "node": ">=26.4.0",
-    "pnpm": ">=11.10.0"
+    "pnpm": ">=12.18.0"
   },
-  "packageManager": "pnpm@11.22.0",
+  "packageManager": "pnpm@12.18.0",
   "files": [
     "dist/bundle",
     "schemas",
@@ -52,32 +52,32 @@
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
-    "@betternotify/core": "1.0.0-beta.11",
-    "@betternotify/email": "1.0.0-beta.7",
-    "@betternotify/slack": "1.0.0-beta.7",
-    "@betternotify/smtp": "1.0.0-beta.6",
-    "@biomejs/biome": "^2.5.15",
+    "@betternotify/core": "1.0.0-beta.12",
+    "@betternotify/email": "1.0.0-beta.8",
+    "@betternotify/slack": "1.0.0-beta.8",
+    "@betternotify/smtp": "1.0.0-beta.7",
+    "@biomejs/biome": "^2.6.5",
     "@tsconfig/strictest": "^2.0.8",
-    "@types/lodash": "^4.17.25",
-    "@types/node": "^26.6.4",
+    "@types/lodash": "^4.17.27",
+    "@types/node": "^26.6.6",
     "@types/turndown": "^5.0.6",
     "@types/yargs": "^17.0.35",
-    "@vitest/coverage-v8": "5.0.3",
+    "@vitest/coverage-v8": "5.1.0",
     "ajv": "8.20.0",
-    "dotenv": "^18.0.5",
+    "dotenv": "^18.0.9",
     "esbuild": "^0.28.2",
-    "handlebars": "^4.7.9",
+    "handlebars": "^4.7.10",
     "husky": "^9.1.7",
     "lodash": "^4.18.1",
     "markdown-to-slack-blocks": "^1.6.1",
-    "marked": "^18.0.14",
+    "marked": "^18.1.3",
     "npm-run-all": "^4.1.5",
     "pino": "^10.4.0",
-    "pino-pretty": "^13.1.3",
+    "pino-pretty": "^13.2.0",
     "tsx": "^4.23.15",
-    "turndown": "^7.2.4",
+    "turndown": "^7.2.5",
     "typescript": "7.0.2",
-    "vitest": "5.0.3",
+    "vitest": "5.1.0",
     "yargs": "^18.2.0"
   }
 }

@@ -9,6 +9,7 @@ Consult this reference when changing command behavior, formats, templates, confi
 If the process succeeds, then we'll use the `success` object to determine the templates for each channel. If it fails (non-zero output), it will use `error`, which also lists the templates for each channel.
 
 The command execution captures stdout and stderr as complete strings, then parses them by format. Optionally it understands and parses the following formats for both `--stdout.format` and `--stderr.format` (both defaults to `raw`):
+
 - `jsonl`: parses each JSON line into `lines`; invalid lines become `{"raw": "<LINE HERE>"}`. Built-in renderers identify log-shaped records by `level`, `time` or `timestamp`, or `msg` or `message`. They use the same log display as Pino, while other records keep key/value formatting. Parsed records remain unchanged for custom templates.
 - `pino`: json lines with Pino log fields. Each valid object is exposed unchanged under `lines`; invalid or non-object lines are wrapped as `{"raw": "<LINE HERE>"}`. Built-in templates derive labels and CSS-variable colors from numeric or string `level`, use `msg` or `message` as the primary text, and format `time` or `timestamp` as a localized date and short time. Timestamps accept epoch milliseconds or ISO strings. Extra fields, raw fallback lines, invalid timestamps, and multiline error stacks remain visible in HTML, Slack, and plain text.
 - `markdown`: the whole output is converted into a single `{"markdown": "all lines concatenated"}`
@@ -16,6 +17,7 @@ The command execution captures stdout and stderr as complete strings, then parse
 - `raw`: the whole output is converted into a single `{"raw": "all lines concatenated"}`
 
 The templates will be processed using [handlebars](https://handlebarsjs.com/api-reference/) with a context containing three objects: `config`, `stdout` and `stderr`, the `status` (process exit code), as well as the following helpers to aid formatting:
+
 - `dateFromISO8601`: parse the Date object from ISO8601 and formats to a localized date (using config's `locale`)
 - `timeFromISO8601`: parse the Date object from ISO8601 and formats to a localized time (using config's `locale`)
 - `datetimeFromISO8601`: parse the Date object from ISO8601 and formats to a localized date and time (using config's `locale`)
@@ -32,6 +34,7 @@ The configuration file defines values to be used by default, they can be overrid
 CLI overrides are prevalidated against yargs' registered option table from `getOptions()` before yargs parses them; unknown nested keys such as `--stdout.does-not-exist` must fail with `Unknown argument: stdout.does-not-exist`.
 
 The repository must always provide configurations for different formats, in order to simplify the examples assume both stderr and stdout use the same format:
+
 - `jsonl`: render log-shaped records with a level label, timestamp, message, and extra fields. Render other records as key/value lists. Preserve raw fallback lines and nested error stacks.
 - `markdown`: convert to HTML.
 - `html`: convert to Markdown.
@@ -66,15 +69,15 @@ Config defines [transports](https://better-notify.com/docs/transports), by defau
 ```
 
 ```js
-    // Produces this:
-    smtpTransport({
-      host: 'smtp.example.com',
-      port: 587,
-      auth: {
-        user: 'username',
-        pass: process.env.SMTP_PASS,
-      },
-    })
+// Produces this:
+smtpTransport({
+  host: 'smtp.example.com',
+  port: 587,
+  auth: {
+    user: 'username',
+    pass: process.env.SMTP_PASS,
+  },
+});
 ```
 
 Environment variables loaded from local `.env` by `dotenv` are for `run-and-notify` provider setup only and must be omitted from the spawned target command environment. `main()` snapshots `process.env` before `parseCli()` loads dotenv and uses that snapshot for the child command. Variables already present before `run-and-notify` starts are explicit user environment and remain propagated to the child command.
